@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agadir Hub</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=Source+Sans+3:wght@300;400;600&display=swap');
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --sand: #C8A96E; --teal: #7BAF9E; --terra: #D4856A;
+  --slate: #6A9BAF; --olive: #9BAF6A;
+  --bg: #1a1814; --surface: #242019; --card: #2d2820;
+  --border: #3d3628; --text: #e8dcc8; --muted: #8a7d6a;
+}
+body { font-family: 'Source Sans 3', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+/* LOGIN */
+.login-screen { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 24px; }
+.login-box { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 48px 36px; max-width: 380px; width: 100%; text-align: center; }
+.login-box h1 { font-family: 'Cormorant Garamond', serif; font-size: 32px; color: var(--sand); letter-spacing: 2px; margin-bottom: 4px; }
+.login-box .sub { color: var(--muted); font-size: 13px; margin-bottom: 8px; }
+.login-box .dates { color: var(--teal); font-size: 14px; margin-bottom: 32px; }
+.google-btn { display: flex; align-items: center; justify-content: center; gap: 12px; width: 100%; padding: 13px 20px; border-radius: 10px; border: 1px solid var(--border); background: var(--card); font-size: 14px; font-family: inherit; cursor: pointer; color: var(--text); font-weight: 600; }
+.google-btn:hover { border-color: var(--sand); }
+.login-error { color: var(--terra); font-size: 12px; margin-top: 12px; }
+
+/* HEADER */
+.header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+.header-title { font-family: 'Cormorant Garamond', serif; font-size: 22px; color: var(--sand); letter-spacing: 1px; }
+.header-sub { font-size: 11px; color: var(--muted); margin-top: 1px; }
+.header-right { display: flex; gap: 8px; align-items: center; }
+.sync-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--teal); }
+.sync-dot.syncing { background: var(--sand); animation: pulse 1s infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+.logout-btn { background: transparent; border: 1px solid var(--border); border-radius: 8px; color: var(--muted); padding: 6px 12px; font-size: 12px; cursor: pointer; font-family: inherit; }
+.logout-btn:hover { color: var(--text); border-color: var(--muted); }
+
+/* NAV TABS */
+.nav { background: var(--surface); border-bottom: 1px solid var(--border); display: flex; overflow-x: auto; padding: 0 24px; scrollbar-width: none; }
+.nav::-webkit-scrollbar { display: none; }
+.nav-tab { padding: 12px 16px; border: none; background: transparent; color: var(--muted); font-size: 13px; font-family: inherit; cursor: pointer; white-space: nowrap; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+.nav-tab.active { color: var(--sand); border-bottom-color: var(--sand); }
+
+/* CONTENT */
+.content { max-width: 1000px; margin: 0 auto; padding: 24px; }
+.section { display: none; }
+.section.active { display: block; }
+
+/* CARDS */
+.card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 16px; }
+.card-title { font-family: 'Cormorant Garamond', serif; font-size: 18px; color: var(--sand); margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+.card-title span { font-size: 20px; }
+
+/* INFO GRID */
+.info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+@media(max-width:600px){ .info-grid { grid-template-columns: 1fr; } }
+.info-item { background: var(--surface); border-radius: 8px; padding: 12px; }
+.info-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+.info-value { font-size: 14px; color: var(--text); font-weight: 600; }
+.info-input { background: transparent; border: none; color: var(--text); font-size: 14px; font-weight: 600; font-family: inherit; width: 100%; outline: none; }
+.info-input::placeholder { color: var(--muted); font-weight: 400; }
+
+/* CHECKLIST */
+.cat-block { margin-bottom: 12px; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+.cat-header { display: flex; align-items: center; gap: 10px; padding: 12px 16px; cursor: pointer; background: var(--surface); }
+.cat-header:hover { background: var(--card); }
+.cat-icon { font-size: 18px; }
+.cat-name { flex: 1; font-weight: 600; font-size: 14px; }
+.cat-progress { font-size: 12px; color: var(--muted); }
+.progress-bar { height: 3px; background: var(--border); }
+.progress-fill { height: 100%; background: var(--teal); transition: width 0.3s; }
+.cat-items { display: none; padding: 8px 0; }
+.cat-items.open { display: block; }
+.check-item { display: flex; align-items: center; gap: 10px; padding: 8px 16px; }
+.check-item:hover { background: rgba(255,255,255,0.02); }
+.check-box { width: 18px; height: 18px; border-radius: 4px; border: 1.5px solid var(--border); background: transparent; cursor: pointer; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 11px; color: var(--teal); }
+.check-box.checked { background: var(--teal); border-color: var(--teal); color: #fff; }
+.check-label { font-size: 14px; flex: 1; }
+.check-label.done { text-decoration: line-through; color: var(--muted); }
+.check-who { font-size: 11px; color: var(--muted); background: var(--surface); border-radius: 4px; padding: 2px 6px; }
+.add-check-row { display: flex; gap: 8px; padding: 8px 16px; }
+.add-check-row input { flex: 1; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 7px 10px; font-size: 13px; color: var(--text); font-family: inherit; outline: none; }
+.add-check-row input:focus { border-color: var(--sand); }
+.add-check-row button { background: var(--sand); color: var(--bg); border: none; border-radius: 6px; padding: 7px 12px; cursor: pointer; font-size: 16px; font-weight: bold; }
+
+/* PACKLISTE */
+.pack-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+@media(max-width:600px){ .pack-grid { grid-template-columns: 1fr; } }
+.pack-col-title { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; font-weight: 600; }
+.pack-item { display: flex; align-items: center; gap: 8px; padding: 7px 0; border-bottom: 1px solid var(--border); }
+.pack-item:last-child { border-bottom: none; }
+.pack-text { flex: 1; font-size: 13px; }
+.pack-del { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 16px; padding: 0 4px; }
+.add-pack-row { display: flex; gap: 8px; margin-top: 10px; }
+.add-pack-row input { flex: 1; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 7px 10px; font-size: 13px; color: var(--text); font-family: inherit; outline: none; }
+.add-pack-row input:focus { border-color: var(--sand); }
+.add-pack-row button { background: var(--sand); color: var(--bg); border: none; border-radius: 6px; padding: 7px 12px; cursor: pointer; font-size: 16px; font-weight: bold; }
+
+/* BUDGET */
+.budget-summary { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-bottom: 16px; }
+@media(max-width:600px){ .budget-summary { grid-template-columns: 1fr; } }
+.budget-stat { background: var(--surface); border-radius: 8px; padding: 14px; text-align: center; }
+.budget-stat .val { font-family: 'Cormorant Garamond', serif; font-size: 24px; font-weight: 700; }
+.budget-stat .lbl { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.expense-item { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+.expense-item:last-child { border-bottom: none; }
+.expense-desc { flex: 1; font-size: 14px; }
+.expense-who { font-size: 11px; color: var(--muted); background: var(--surface); border-radius: 4px; padding: 2px 8px; }
+.expense-amt { font-size: 15px; font-weight: 600; color: var(--sand); min-width: 70px; text-align: right; }
+.expense-del { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 16px; }
+.add-expense { display: grid; grid-template-columns: 1fr auto auto auto; gap: 8px; margin-top: 12px; }
+@media(max-width:600px){ .add-expense { grid-template-columns: 1fr 1fr; } }
+.add-expense input, .add-expense select { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 8px 10px; font-size: 13px; color: var(--text); font-family: inherit; outline: none; }
+.add-expense input:focus, .add-expense select:focus { border-color: var(--sand); }
+.add-expense select option { background: var(--surface); }
+.add-expense button { background: var(--sand); color: var(--bg); border: none; border-radius: 6px; padding: 8px 16px; cursor: pointer; font-weight: bold; font-size: 14px; }
+.abrechnung { background: var(--surface); border-radius: 8px; padding: 14px; margin-top: 12px; }
+.abrechnung-title { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; }
+.abrechnung-item { font-size: 14px; padding: 4px 0; }
+.abrechnung-item.owes { color: var(--terra); }
+.abrechnung-item.owed { color: var(--teal); }
+
+/* REISEPLAN */
+.day-block { margin-bottom: 12px; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+.day-header { display: flex; align-items: center; gap: 10px; padding: 12px 16px; cursor: pointer; background: var(--surface); }
+.day-header:hover { background: var(--card); }
+.day-num { background: var(--sand); color: var(--bg); border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px; flex-shrink: 0; }
+.day-title { flex: 1; font-weight: 600; font-size: 14px; }
+.day-date { font-size: 12px; color: var(--muted); }
+.day-items { display: none; padding: 12px 16px; }
+.day-items.open { display: block; }
+.activity-item { display: flex; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border); align-items: flex-start; }
+.activity-item:last-child { border-bottom: none; }
+.activity-time { font-size: 12px; color: var(--sand); min-width: 50px; margin-top: 1px; }
+.activity-text { flex: 1; font-size: 14px; }
+.activity-del { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 16px; }
+.add-activity { display: flex; gap: 8px; margin-top: 10px; }
+.add-activity input { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 7px 10px; font-size: 13px; color: var(--text); font-family: inherit; outline: none; }
+.add-activity input:focus { border-color: var(--sand); }
+.add-activity .time-in { width: 80px; flex-shrink: 0; }
+.add-activity .text-in { flex: 1; }
+.add-activity button { background: var(--sand); color: var(--bg); border: none; border-radius: 6px; padding: 7px 12px; cursor: pointer; font-size: 16px; font-weight: bold; }
+
+/* NOTIZEN / PINNWAND */
+.note-item { background: var(--surface); border-radius: 8px; padding: 14px; margin-bottom: 10px; position: relative; }
+.note-author { font-size: 11px; color: var(--sand); margin-bottom: 6px; }
+.note-text { font-size: 14px; line-height: 1.6; white-space: pre-wrap; }
+.note-del { position: absolute; top: 10px; right: 12px; background: none; border: none; color: var(--muted); cursor: pointer; font-size: 16px; }
+.add-note { display: flex; flex-direction: column; gap: 8px; }
+.add-note textarea { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; font-size: 14px; color: var(--text); font-family: inherit; outline: none; resize: vertical; min-height: 80px; }
+.add-note textarea:focus { border-color: var(--sand); }
+.add-note button { align-self: flex-end; background: var(--sand); color: var(--bg); border: none; border-radius: 8px; padding: 9px 20px; cursor: pointer; font-weight: 600; font-family: inherit; }
+
+/* ABSTIMMUNG */
+.poll-item { background: var(--surface); border-radius: 10px; padding: 16px; margin-bottom: 12px; }
+.poll-question { font-weight: 600; font-size: 15px; margin-bottom: 12px; }
+.poll-option { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.poll-bar-wrap { flex: 1; background: var(--border); border-radius: 4px; height: 8px; overflow: hidden; }
+.poll-bar { height: 100%; background: var(--teal); border-radius: 4px; transition: width 0.3s; }
+.poll-vote-btn { background: var(--card); border: 1px solid var(--border); border-radius: 6px; padding: 5px 12px; font-size: 12px; color: var(--text); cursor: pointer; font-family: inherit; white-space: nowrap; }
+.poll-vote-btn.voted { background: var(--teal); border-color: var(--teal); color: #fff; }
+.poll-votes { font-size: 11px; color: var(--muted); min-width: 30px; text-align: right; }
+.add-poll { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+.add-poll input { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 8px 12px; font-size: 13px; color: var(--text); font-family: inherit; outline: none; }
+.add-poll input:focus { border-color: var(--sand); }
+.add-poll button { background: var(--sand); color: var(--bg); border: none; border-radius: 8px; padding: 9px; cursor: pointer; font-weight: 600; font-family: inherit; }
+
+/* WICHTIGES */
+.important-item { display: flex; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border); align-items: flex-start; }
+.important-item:last-child { border-bottom: none; }
+.important-icon { font-size: 20px; flex-shrink: 0; }
+.important-label { font-size: 12px; color: var(--muted); }
+.important-val { font-size: 14px; font-weight: 600; margin-top: 2px; }
+.important-input { background: transparent; border: none; color: var(--text); font-size: 14px; font-weight: 600; font-family: inherit; width: 100%; outline: none; }
+.important-input::placeholder { color: var(--muted); font-weight: 400; }
+
+/* TOAST */
+.toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 10px 20px; border-radius: 20px; font-size: 13px; display: none; z-index: 999; }
+.toast.show { display: block; }
+
+/* BTN */
+.btn { background: var(--sand); color: var(--bg); border: none; border-radius: 8px; padding: 10px 20px; cursor: pointer; font-weight: 600; font-family: inherit; font-size: 14px; }
+.btn:hover { opacity: 0.9; }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="login-screen" id="loginScreen">
+  <div class="login-box">
+    <h1>AGADIR HUB</h1>
+    <div class="sub">Reise-Zentrale</div>
+    <div class="dates">01. Juni – 08. Juni 2026 · Marokko</div>
+    <button class="google-btn" onclick="signIn()">
+      <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+      Mit Google anmelden
+    </button>
+    <div class="login-error" id="loginError"></div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="appScreen" style="display:none">
+  <div class="header">
+    <div>
+      <div class="header-title">AGADIR HUB</div>
+      <div class="header-sub">01.–08. Juni 2026 · Marokko</div>
+    </div>
+    <div class="header-right">
+      <div class="sync-dot" id="syncDot"></div>
+      <button class="logout-btn" onclick="signOut()">Abmelden</button>
+    </div>
+  </div>
+
+  <div class="nav">
+    <button class="nav-tab active" onclick="showSection('info')">&#9992; Infos</button>
+    <button class="nav-tab" onclick="showSection('checklist')">&#10003; Checkliste</button>
+    <button class="nav-tab" onclick="showSection('packlist')">&#127365; Packliste</button>
+    <button class="nav-tab" onclick="showSection('budget')">&#128176; Budget</button>
+    <button class="nav-tab" onclick="showSection('plan')">&#128197; Reiseplan</button>
+    <button class="nav-tab" onclick="showSection('notes')">&#128204; Pinnwand</button>
+    <button class="nav-tab" onclick="showSection('polls')">&#128202; Abstimmung</button>
+    <button class="nav-tab" onclick="showSection('important')">&#128737; Wichtiges</button>
+  </div>
+
+  <div class="content">
+
+    <!-- INFOS -->
+    <div class="section active" id="section-info">
+      <div class="card">
+        <div class="card-title"><span>&#9992;</span> Reise auf einen Blick</div>
+        <div class="info-grid" id="infoGrid"></div>
+      </div>
+    </div>
+
+    <!-- CHECKLISTE -->
+    <div class="section" id="section-checklist">
+      <div class="card">
+        <div class="card-title"><span>&#10003;</span> Checkliste</div>
+        <div id="checklistContainer"></div>
+      </div>
+    </div>
+
+    <!-- PACKLISTE -->
+    <div class="section" id="section-packlist">
+      <div class="card">
+        <div class="card-title"><span>&#127365;</span> Packliste – wer bringt was</div>
+        <div class="pack-grid" id="packGrid"></div>
+      </div>
+    </div>
+
+    <!-- BUDGET -->
+    <div class="section" id="section-budget">
+      <div class="card">
+        <div class="card-title"><span>&#128176;</span> Budget & Ausgaben</div>
+        <div class="budget-summary" id="budgetSummary"></div>
+        <div id="expenseList"></div>
+        <div class="add-expense">
+          <input type="text" id="expDesc" placeholder="Beschreibung">
+          <input type="number" id="expAmt" placeholder="Betrag (€)" style="width:120px">
+          <select id="expWho"><option value="">Wer zahlt?</option></select>
+          <button onclick="addExpense()">+</button>
+        </div>
+        <div class="abrechnung" id="abrechnung"></div>
+      </div>
+    </div>
+
+    <!-- REISEPLAN -->
+    <div class="section" id="section-plan">
+      <div class="card">
+        <div class="card-title"><span>&#128197;</span> Reiseplan</div>
+        <div id="planContainer"></div>
+      </div>
+    </div>
+
+    <!-- PINNWAND -->
+    <div class="section" id="section-notes">
+      <div class="card">
+        <div class="card-title"><span>&#128204;</span> Pinnwand & Notizen</div>
+        <div id="notesList"></div>
+        <div class="add-note" style="margin-top:16px">
+          <textarea id="noteInput" placeholder="Notiz, Idee, Link..."></textarea>
+          <button class="btn" onclick="addNote()">Pinnen</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ABSTIMMUNG -->
+    <div class="section" id="section-polls">
+      <div class="card">
+        <div class="card-title"><span>&#128202;</span> Abstimmungen</div>
+        <div id="pollsList"></div>
+        <div class="add-poll" style="margin-top:16px">
+          <input type="text" id="pollQuestion" placeholder="Frage z.B. Welches Restaurant heute Abend?">
+          <input type="text" id="pollOpt1" placeholder="Option 1">
+          <input type="text" id="pollOpt2" placeholder="Option 2">
+          <input type="text" id="pollOpt3" placeholder="Option 3 (optional)">
+          <button class="btn" onclick="addPoll()">Abstimmung erstellen</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- WICHTIGES -->
+    <div class="section" id="section-important">
+      <div class="card">
+        <div class="card-title"><span>&#128737;</span> Wichtige Infos & Notfallnummern</div>
+        <div id="importantList"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut as fbSignOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getFirestore, doc, onSnapshot, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCVouGDtFkuhPQ2OxAciV2IC5krqUeobtI",
+  authDomain: "marokko-5ab4b.firebaseapp.com",
+  projectId: "marokko-5ab4b",
+  storageBucket: "marokko-5ab4b.firebasestorage.app",
+  messagingSenderId: "409592796667",
+  appId: "1:409592796667:web:3d0787c0fe538ab8c6675e"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const TRIP_ID = 'agadir-juni-2026';
+
+// ── DEFAULT DATA ───────────────────────────────
+var data = {
+  info: [
+    {label:'Flug Hin', icon:'✈️', value:''},
+    {label:'Flug Zurück', icon:'✈️', value:''},
+    {label:'Hotel', icon:'🏨', value:''},
+    {label:'Adresse', icon:'📍', value:''},
+    {label:'Check-in', icon:'🔑', value:''},
+    {label:'Check-out', icon:'🔑', value:''},
+    {label:'Buchungsnummer', icon:'📋', value:''},
+    {label:'Teilnehmer', icon:'👥', value:''}
+  ],
+  members: [],
+  checklist: [
+    {cat:'Dokumente', icon:'📄', open:false, items:[
+      {id:1,text:'Reisepass (mind. 6 Mon. gültig)',done:false},
+      {id:2,text:'Krankenversicherungskarte',done:false},
+      {id:3,text:'Flugtickets (digital/ausgedruckt)',done:false},
+      {id:4,text:'Hotelbuchung',done:false},
+      {id:5,text:'Reiseversicherung',done:false}
+    ]},
+    {cat:'Gesundheit', icon:'💊', open:false, items:[
+      {id:10,text:'Sonnencreme (LSF 50+)',done:false},
+      {id:11,text:'Insektenschutz',done:false},
+      {id:12,text:'Reiseapotheke',done:false},
+      {id:13,text:'Magentabletten',done:false},
+      {id:14,text:'Pflaster & Desinfektionsmittel',done:false}
+    ]},
+    {cat:'Geld', icon:'💳', open:false, items:[
+      {id:20,text:'Kreditkarte (Visa/Mastercard)',done:false},
+      {id:21,text:'Bargeld Euro (für Wechsel)',done:false},
+      {id:22,text:'Notfallgeld separat',done:false}
+    ]},
+    {cat:'Technik', icon:'📱', open:false, items:[
+      {id:30,text:'Handy + Ladekabel',done:false},
+      {id:31,text:'Adapter (Typ C/E)',done:false},
+      {id:32,text:'Powerbank',done:false},
+      {id:33,text:'Kopfhörer',done:false},
+      {id:34,text:'Kamera',done:false}
+    ]},
+    {cat:'Gepäck', icon:'🧳', open:false, items:[
+      {id:40,text:'Koffer/Rucksack gepackt',done:false},
+      {id:41,text:'Handgepäck vorbereitet',done:false},
+      {id:42,text:'Schloss für Gepäck',done:false}
+    ]},
+    {cat:'Agadir-spezifisch', icon:'🌊', open:false, items:[
+      {id:50,text:'Badekleidung',done:false},
+      {id:51,text:'Sonnenbrillen',done:false},
+      {id:52,text:'Flip Flops',done:false},
+      {id:53,text:'Leichte Kleidung',done:false},
+      {id:54,text:'1 Abendoutfit',done:false}
+    ]},
+    {cat:'Zuhause', icon:'🏠', open:false, items:[
+      {id:60,text:'Pflanzen gießen',done:false},
+      {id:61,text:'Wohnung abschließen',done:false},
+      {id:62,text:'Müll rausbringen',done:false},
+      {id:63,text:'Online-Check-in',done:false}
+    ]}
+  ],
+  packlist: {
+    Silas: [],
+    Kollege: []
+  },
+  expenses: [],
+  plan: [
+    {day:1, date:'01.06.', title:'Anreisetag', open:false, activities:[]},
+    {day:2, date:'02.06.', title:'Strandtag', open:false, activities:[]},
+    {day:3, date:'03.06.', title:'Erkunden', open:false, activities:[]},
+    {day:4, date:'04.06.', title:'Ausflug', open:false, activities:[]},
+    {day:5, date:'05.06.', title:'Entspannung', open:false, activities:[]},
+    {day:6, date:'06.06.', title:'Shoppen & Medina', open:false, activities:[]},
+    {day:7, date:'07.06.', title:'Letzter Tag', open:false, activities:[]},
+    {day:8, date:'08.06.', title:'Abreisetag', open:false, activities:[]}
+  ],
+  notes: [],
+  polls: [],
+  important: [
+    {icon:'🚑', label:'Notruf Marokko', value:'15 / 19'},
+    {icon:'🏥', label:'Nächstes Krankenhaus', value:'Clinique du Sud, Agadir'},
+    {icon:'🏨', label:'Hotel Telefon', value:''},
+    {icon:'✈️', label:'Fluggesellschaft', value:''},
+    {icon:'💳', label:'Kreditkarten-Notfallnummer', value:''},
+    {icon:'🇩🇪', label:'Deutsche Botschaft Rabat', value:'+212 537 21 56 31'},
+    {icon:'💱', label:'Wechselkurs', value:'1 EUR ≈ 10.8 MAD'}
+  ]
+};
+
+var saveTimer = null;
+var currentUser = null;
+var unsubscribe = null;
+
+// ── AUTH ───────────────────────────────────────
+window.signIn = async function() {
+  try {
+    await signInWithPopup(auth, new GoogleAuthProvider());
+  } catch(e) {
+    document.getElementById('loginError').textContent = 'Anmeldung fehlgeschlagen.';
+  }
+};
+window.signOut = async function() {
+  if (unsubscribe) unsubscribe();
+  await fbSignOut(auth);
+};
+
+onAuthStateChanged(auth, function(user) {
+  if (user) {
+    currentUser = user;
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('appScreen').style.display = 'block';
+    loadData();
+  } else {
+    currentUser = null;
+    document.getElementById('loginScreen').style.display = 'flex';
+    document.getElementById('appScreen').style.display = 'none';
+  }
+});
+
+// ── FIRESTORE ──────────────────────────────────
+function setSyncing(v) {
+  document.getElementById('syncDot').className = 'sync-dot' + (v ? ' syncing' : '');
+}
+
+function loadData() {
+  setSyncing(true);
+  var ref = doc(db, 'trips', TRIP_ID);
+  unsubscribe = onSnapshot(ref, function(snap) {
+    if (snap.exists()) {
+      var d = snap.data();
+      if (d.info) data.info = d.info;
+      if (d.members) data.members = d.members;
+      if (d.checklist) data.checklist = d.checklist;
+      if (d.packlist) data.packlist = d.packlist;
+      if (d.expenses) data.expenses = d.expenses;
+      if (d.plan) data.plan = d.plan;
+      if (d.notes) data.notes = d.notes;
+      if (d.polls) data.polls = d.polls;
+      if (d.important) data.important = d.important;
+    }
+    renderAll();
+    setSyncing(false);
+  });
+}
+
+function scheduleSave() {
+  setSyncing(true);
+  if (saveTimer) clearTimeout(saveTimer);
+  saveTimer = setTimeout(function() {
+    setDoc(doc(db, 'trips', TRIP_ID), data)
+      .then(function(){ setSyncing(false); })
+      .catch(function(){ showToast('Fehler beim Speichern'); setSyncing(false); });
+  }, 800);
+}
+
+// ── NAV ────────────────────────────────────────
+window.showSection = function(id) {
+  document.querySelectorAll('.section').forEach(function(s){ s.classList.remove('active'); });
+  document.querySelectorAll('.nav-tab').forEach(function(t){ t.classList.remove('active'); });
+  document.getElementById('section-'+id).classList.add('active');
+  event.target.classList.add('active');
+};
+
+// ── RENDER ALL ─────────────────────────────────
+function renderAll() {
+  renderInfo();
+  renderChecklist();
+  renderPacklist();
+  renderBudget();
+  renderPlan();
+  renderNotes();
+  renderPolls();
+  renderImportant();
+}
+
+// ── INFO ───────────────────────────────────────
+function renderInfo() {
+  var el = document.getElementById('infoGrid');
+  el.innerHTML = '';
+  data.info.forEach(function(item, idx) {
+    var div = document.createElement('div'); div.className = 'info-item';
+    div.innerHTML = '<div class="info-label">'+item.icon+' '+item.label+'</div>';
+    var inp = document.createElement('input');
+    inp.className = 'info-input'; inp.type = 'text';
+    inp.value = item.value; inp.placeholder = 'Eintragen...';
+    inp.onchange = (function(i){ return function(){ data.info[i].value = this.value; scheduleSave(); }; })(idx);
+    div.appendChild(inp); el.appendChild(div);
+  });
+}
+
+// ── CHECKLIST ──────────────────────────────────
+function renderChecklist() {
+  var el = document.getElementById('checklistContainer'); el.innerHTML = '';
+  data.checklist.forEach(function(cat, ci) {
+    var total = cat.items.length;
+    var done = cat.items.filter(function(i){ return i.done; }).length;
+    var pct = total ? Math.round(done/total*100) : 0;
+
+    var block = document.createElement('div'); block.className = 'cat-block';
+    block.innerHTML = '<div class="cat-header" onclick="toggleCat('+ci+')">'
+      +'<span class="cat-icon">'+cat.icon+'</span>'
+      +'<span class="cat-name">'+cat.cat+'</span>'
+      +'<span class="cat-progress">'+done+'/'+total+'</span>'
+      +'</div>'
+      +'<div class="progress-bar"><div class="progress-fill" style="width:'+pct+'%"></div></div>';
+
+    var items = document.createElement('div');
+    items.className = 'cat-items' + (cat.open ? ' open' : '');
+    items.id = 'cat-'+ci;
+
+    cat.items.forEach(function(item, ii) {
+      var row = document.createElement('div'); row.className = 'check-item';
+      var cb = document.createElement('div');
+      cb.className = 'check-box' + (item.done ? ' checked' : '');
+      cb.innerHTML = item.done ? '&#10003;' : '';
+      cb.onclick = (function(c,i){ return function(){ data.checklist[c].items[i].done = !data.checklist[c].items[i].done; scheduleSave(); renderChecklist(); }; })(ci,ii);
+      var lbl = document.createElement('span');
+      lbl.className = 'check-label' + (item.done ? ' done' : '');
+      lbl.textContent = item.text;
+      var del = document.createElement('button');
+      del.className = 'pack-del'; del.innerHTML = '&times;';
+      del.onclick = (function(c,i){ return function(){ data.checklist[c].items.splice(i,1); scheduleSave(); renderChecklist(); }; })(ci,ii);
+      row.appendChild(cb); row.appendChild(lbl); row.appendChild(del);
+      items.appendChild(row);
+    });
+
+    var addRow = document.createElement('div'); addRow.className = 'add-check-row';
+    var inp = document.createElement('input'); inp.type = 'text'; inp.placeholder = 'Item hinzufügen...';
+    var btn = document.createElement('button'); btn.textContent = '+';
+    btn.onclick = (function(c, input){ return function(){
+      var t = input.value.trim(); if (!t) return;
+      data.checklist[c].items.push({id:Date.now(),text:t,done:false});
+      input.value=''; scheduleSave(); renderChecklist();
+    }; })(ci, inp);
+    inp.onkeydown = (function(b){ return function(e){ if(e.key==='Enter') b.click(); }; })(btn);
+    addRow.appendChild(inp); addRow.appendChild(btn);
+    items.appendChild(addRow);
+    block.appendChild(items);
+    el.appendChild(block);
+  });
+}
+
+window.toggleCat = function(ci) {
+  data.checklist[ci].open = !data.checklist[ci].open;
+  var el = document.getElementById('cat-'+ci);
+  if (el) el.classList.toggle('open', data.checklist[ci].open);
+};
+
+// ── PACKLISTE ──────────────────────────────────
+function renderPacklist() {
+  var el = document.getElementById('packGrid'); el.innerHTML = '';
+  var members = Object.keys(data.packlist);
+  members.forEach(function(name) {
+    var col = document.createElement('div');
+    col.innerHTML = '<div class="pack-col-title">'+name+'</div>';
+    var items = data.packlist[name];
+    items.forEach(function(item, ii) {
+      var row = document.createElement('div'); row.className = 'pack-item';
+      var sp = document.createElement('span'); sp.className = 'pack-text'; sp.textContent = item;
+      var del = document.createElement('button'); del.className = 'pack-del'; del.innerHTML = '&times;';
+      del.onclick = (function(n,i){ return function(){ data.packlist[n].splice(i,1); scheduleSave(); renderPacklist(); }; })(name,ii);
+      row.appendChild(sp); row.appendChild(del); col.appendChild(row);
+    });
+    var addRow = document.createElement('div'); addRow.className = 'add-pack-row';
+    var inp = document.createElement('input'); inp.type='text'; inp.placeholder = 'Item für '+name+'...';
+    var btn = document.createElement('button'); btn.textContent = '+';
+    btn.onclick = (function(n, input){ return function(){
+      var t = input.value.trim(); if(!t) return;
+      data.packlist[n].push(t); input.value=''; scheduleSave(); renderPacklist();
+    }; })(name, inp);
+    inp.onkeydown = (function(b){ return function(e){ if(e.key==='Enter') b.click(); }; })(btn);
+    addRow.appendChild(inp); addRow.appendChild(btn); col.appendChild(addRow);
+    el.appendChild(col);
+  });
+}
+
+// ── BUDGET ─────────────────────────────────────
+function renderBudget() {
+  var members = data.members.length ? data.members : ['Silas','Kollege'];
+  var total = data.expenses.reduce(function(s,e){ return s+parseFloat(e.amt||0); }, 0);
+  var perPerson = total / members.length;
+  var paid = {};
+  members.forEach(function(m){ paid[m] = 0; });
+  data.expenses.forEach(function(e){ if(paid[e.who]!==undefined) paid[e.who] += parseFloat(e.amt||0); });
+
+  var sumEl = document.getElementById('budgetSummary');
+  sumEl.innerHTML = '<div class="budget-stat"><div class="val" style="color:var(--sand)">'+total.toFixed(2)+'€</div><div class="lbl">Gesamt</div></div>'
+    +'<div class="budget-stat"><div class="val" style="color:var(--teal)">'+perPerson.toFixed(2)+'€</div><div class="lbl">Pro Person</div></div>'
+    +'<div class="budget-stat"><div class="val" style="color:var(--terra)">'+data.expenses.length+'</div><div class="lbl">Ausgaben</div></div>';
+
+  var listEl = document.getElementById('expenseList'); listEl.innerHTML = '';
+  data.expenses.forEach(function(exp, i) {
+    var row = document.createElement('div'); row.className = 'expense-item';
+    row.innerHTML = '<span class="expense-desc">'+exp.desc+'</span>'
+      +'<span class="expense-who">'+exp.who+'</span>'
+      +'<span class="expense-amt">'+parseFloat(exp.amt).toFixed(2)+'€</span>';
+    var del = document.createElement('button'); del.className = 'expense-del'; del.innerHTML = '&times;';
+    del.onclick = (function(idx){ return function(){ data.expenses.splice(idx,1); scheduleSave(); renderBudget(); }; })(i);
+    row.appendChild(del); listEl.appendChild(row);
+  });
+
+  var sel = document.getElementById('expWho');
+  sel.innerHTML = '<option value="">Wer zahlt?</option>';
+  members.forEach(function(m){ sel.innerHTML += '<option value="'+m+'">'+m+'</option>'; });
+
+  var abr = document.getElementById('abrechnung');
+  abr.innerHTML = '<div class="abrechnung-title">Abrechnung</div>';
+  members.forEach(function(m) {
+    var diff = (paid[m]||0) - perPerson;
+    var div = document.createElement('div');
+    div.className = 'abrechnung-item ' + (diff >= 0 ? 'owed' : 'owes');
+    div.textContent = diff >= 0
+      ? m + ' bekommt ' + Math.abs(diff).toFixed(2) + '€ zurück'
+      : m + ' schuldet noch ' + Math.abs(diff).toFixed(2) + '€';
+    abr.appendChild(div);
+  });
+}
+
+window.addExpense = function() {
+  var desc = document.getElementById('expDesc').value.trim();
+  var amt  = document.getElementById('expAmt').value;
+  var who  = document.getElementById('expWho').value;
+  if (!desc || !amt || !who) { showToast('Alle Felder ausfüllen'); return; }
+  data.expenses.push({id:Date.now(), desc:desc, amt:parseFloat(amt), who:who});
+  document.getElementById('expDesc').value='';
+  document.getElementById('expAmt').value='';
+  document.getElementById('expWho').value='';
+  scheduleSave(); renderBudget();
+};
+
+// ── REISEPLAN ──────────────────────────────────
+function renderPlan() {
+  var el = document.getElementById('planContainer'); el.innerHTML = '';
+  data.plan.forEach(function(day, di) {
+    var block = document.createElement('div'); block.className = 'day-block';
+    block.innerHTML = '<div class="day-header" onclick="toggleDay('+di+')">'
+      +'<div class="day-num">'+day.day+'</div>'
+      +'<div class="day-title">'+day.title+'</div>'
+      +'<div class="day-date">'+day.date+'</div>'
+      +'</div>';
+    var items = document.createElement('div');
+    items.className = 'day-items' + (day.open ? ' open' : '');
+    items.id = 'day-'+di;
+
+    day.activities.forEach(function(act, ai) {
+      var row = document.createElement('div'); row.className = 'activity-item';
+      row.innerHTML = '<span class="activity-time">'+act.time+'</span><span class="activity-text">'+act.text+'</span>';
+      var del = document.createElement('button'); del.className = 'activity-del'; del.innerHTML = '&times;';
+      del.onclick = (function(d,a){ return function(){ data.plan[d].activities.splice(a,1); scheduleSave(); renderPlan(); }; })(di,ai);
+      row.appendChild(del); items.appendChild(row);
+    });
+
+    var addRow = document.createElement('div'); addRow.className = 'add-activity';
+    var timeInp = document.createElement('input'); timeInp.type='text'; timeInp.className='time-in'; timeInp.placeholder='Zeit';
+    var textInp = document.createElement('input'); textInp.type='text'; textInp.className='text-in'; textInp.placeholder='Aktivität...';
+    var btn = document.createElement('button'); btn.textContent='+';
+    btn.onclick = (function(d, ti, tx){ return function(){
+      var t = tx.value.trim(); if(!t) return;
+      data.plan[d].activities.push({time:ti.value||'', text:t});
+      ti.value=''; tx.value=''; scheduleSave(); renderPlan();
+    }; })(di, timeInp, textInp);
+    textInp.onkeydown = (function(b){ return function(e){ if(e.key==='Enter') b.click(); }; })(btn);
+    addRow.appendChild(timeInp); addRow.appendChild(textInp); addRow.appendChild(btn);
+    items.appendChild(addRow);
+    block.appendChild(items); el.appendChild(block);
+  });
+}
+
+window.toggleDay = function(di) {
+  data.plan[di].open = !data.plan[di].open;
+  var el = document.getElementById('day-'+di);
+  if (el) el.classList.toggle('open', data.plan[di].open);
+};
+
+// ── NOTES ─────────────────────────────────────
+function renderNotes() {
+  var el = document.getElementById('notesList'); el.innerHTML = '';
+  if (!data.notes.length) { el.innerHTML = '<div style="color:var(--muted);font-size:13px;padding:10px 0">Noch keine Notizen</div>'; return; }
+  data.notes.slice().reverse().forEach(function(note, ri) {
+    var i = data.notes.length - 1 - ri;
+    var div = document.createElement('div'); div.className = 'note-item';
+    div.innerHTML = '<div class="note-author">'+note.author+'</div><div class="note-text">'+note.text+'</div>';
+    var del = document.createElement('button'); del.className = 'note-del'; del.innerHTML = '&times;';
+    del.onclick = (function(idx){ return function(){ data.notes.splice(idx,1); scheduleSave(); renderNotes(); }; })(i);
+    div.appendChild(del); el.appendChild(div);
+  });
+}
+
+window.addNote = function() {
+  var text = document.getElementById('noteInput').value.trim();
+  if (!text) return;
+  var name = currentUser ? (currentUser.displayName || currentUser.email) : 'Unbekannt';
+  data.notes.push({id:Date.now(), text:text, author:name});
+  document.getElementById('noteInput').value='';
+  scheduleSave(); renderNotes();
+};
+
+// ── POLLS ──────────────────────────────────────
+function renderPolls() {
+  var el = document.getElementById('pollsList'); el.innerHTML = '';
+  if (!data.polls.length) { el.innerHTML = '<div style="color:var(--muted);font-size:13px;padding:10px 0">Noch keine Abstimmungen</div>'; return; }
+  data.polls.forEach(function(poll, pi) {
+    var total = poll.options.reduce(function(s,o){ return s+(o.votes||0); }, 0);
+    var div = document.createElement('div'); div.className = 'poll-item';
+    div.innerHTML = '<div class="poll-question">'+poll.question+'</div>';
+    poll.options.forEach(function(opt, oi) {
+      var pct = total ? Math.round((opt.votes||0)/total*100) : 0;
+      var row = document.createElement('div'); row.className = 'poll-option';
+      var voted = poll.votedBy && poll.votedBy[currentUser&&currentUser.uid] === oi;
+      row.innerHTML = '<span style="font-size:13px;min-width:80px">'+opt.text+'</span>'
+        +'<div class="poll-bar-wrap"><div class="poll-bar" style="width:'+pct+'%"></div></div>'
+        +'<span class="poll-votes">'+pct+'%</span>';
+      var vBtn = document.createElement('button');
+      vBtn.className = 'poll-vote-btn' + (voted ? ' voted' : '');
+      vBtn.textContent = voted ? 'Gewählt ✓' : 'Wählen';
+      vBtn.onclick = (function(p,o){ return function(){
+        if (!poll.votedBy) poll.votedBy = {};
+        poll.votedBy[currentUser.uid] = o;
+        poll.options[o].votes = (poll.options[o].votes||0) + 1;
+        scheduleSave(); renderPolls();
+      }; })(pi,oi);
+      row.appendChild(vBtn); div.appendChild(row);
+    });
+    var del = document.createElement('button');
+    del.style.cssText='background:none;border:none;color:var(--muted);cursor:pointer;font-size:12px;margin-top:8px;';
+    del.textContent='Löschen';
+    del.onclick=(function(i){return function(){data.polls.splice(i,1);scheduleSave();renderPolls();};})(pi);
+    div.appendChild(del); el.appendChild(div);
+  });
+}
+
+window.addPoll = function() {
+  var q = document.getElementById('pollQuestion').value.trim();
+  var o1 = document.getElementById('pollOpt1').value.trim();
+  var o2 = document.getElementById('pollOpt2').value.trim();
+  var o3 = document.getElementById('pollOpt3').value.trim();
+  if (!q || !o1 || !o2) { showToast('Frage + mind. 2 Optionen eingeben'); return; }
+  var opts = [{text:o1,votes:0},{text:o2,votes:0}];
+  if (o3) opts.push({text:o3,votes:0});
+  data.polls.push({id:Date.now(),question:q,options:opts,votedBy:{}});
+  ['pollQuestion','pollOpt1','pollOpt2','pollOpt3'].forEach(function(id){ document.getElementById(id).value=''; });
+  scheduleSave(); renderPolls();
+};
+
+// ── IMPORTANT ──────────────────────────────────
+function renderImportant() {
+  var el = document.getElementById('importantList'); el.innerHTML = '';
+  data.important.forEach(function(item, i) {
+    var row = document.createElement('div'); row.className = 'important-item';
+    row.innerHTML = '<span class="important-icon">'+item.icon+'</span><div style="flex:1"><div class="important-label">'+item.label+'</div></div>';
+    var inp = document.createElement('input');
+    inp.className = 'important-input'; inp.type='text';
+    inp.value=item.value; inp.placeholder='Eintragen...';
+    inp.onchange=(function(idx){ return function(){ data.important[idx].value=this.value; scheduleSave(); }; })(i);
+    row.children[1].appendChild(inp); el.appendChild(row);
+  });
+}
+
+// ── TOAST ──────────────────────────────────────
+function showToast(msg) {
+  var t = document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(function(){ t.classList.remove('show'); }, 2200);
+}
+window.showToast = showToast;
+</script>
+</body>
+</html>

@@ -120,6 +120,13 @@ body { font-family: 'Source Sans 3', sans-serif; background: var(--bg); color: v
 .exp-part-chip { font-size: 12px; padding: 4px 10px; border-radius: 12px; border: 1px solid var(--border); background: var(--surface); color: var(--muted); cursor: pointer; user-select: none; transition: background 0.15s, color 0.15s; }
 .exp-part-chip.active { background: var(--sand); color: var(--bg); border-color: var(--sand); }
 .expense-parts { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.abrechnung-transfer { display: flex; align-items: center; gap: 8px; font-size: 14px; padding: 6px 0; border-bottom: 1px solid var(--border); }
+.abrechnung-transfer:last-child { border-bottom: none; }
+.abr-from { color: var(--terra); font-weight: 600; }
+.abr-to { color: var(--teal); font-weight: 600; }
+.abr-arrow { color: var(--muted); font-size: 12px; }
+.abr-amt { margin-left: auto; font-weight: 700; color: var(--sand); }
+.abrechnung-settled { font-size: 13px; color: var(--teal); text-align: center; padding: 8px 0; }
 .abrechnung { background: var(--surface); border-radius: 8px; padding: 14px; margin-top: 12px; }
 .abrechnung-title { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; }
 .abrechnung-item { font-size: 14px; padding: 4px 0; }
@@ -671,17 +678,39 @@ function renderBudget() {
     });
   }
 
+  // Settle debts: match debtors with creditors greedily
+  var debtors = [], creditors = [];
+  members.forEach(function(m) {
+    var b = Math.round((balance[m] || 0) * 100) / 100;
+    if (b < -0.005) debtors.push({name: m, amt: -b});
+    else if (b > 0.005) creditors.push({name: m, amt: b});
+  });
+  var transfers = [];
+  var d = 0, c = 0;
+  while (d < debtors.length && c < creditors.length) {
+    var pay = Math.min(debtors[d].amt, creditors[c].amt);
+    transfers.push({from: debtors[d].name, to: creditors[c].name, amt: pay});
+    debtors[d].amt -= pay;
+    creditors[c].amt -= pay;
+    if (debtors[d].amt < 0.005) d++;
+    if (creditors[c].amt < 0.005) c++;
+  }
+
   var abr = document.getElementById('abrechnung');
   abr.innerHTML = '<div class="abrechnung-title">Abrechnung</div>';
-  members.forEach(function(m) {
-    var diff = balance[m] || 0;
-    var div = document.createElement('div');
-    div.className = 'abrechnung-item ' + (diff >= 0 ? 'owed' : 'owes');
-    div.textContent = diff >= 0
-      ? m + ' bekommt ' + Math.abs(diff).toFixed(2) + '€ zurück'
-      : m + ' schuldet noch ' + Math.abs(diff).toFixed(2) + '€';
-    abr.appendChild(div);
-  });
+  if (!transfers.length) {
+    abr.innerHTML += '<div class="abrechnung-settled">Alle quitt ✓</div>';
+  } else {
+    transfers.forEach(function(t) {
+      var div = document.createElement('div');
+      div.className = 'abrechnung-transfer';
+      div.innerHTML = '<span class="abr-from">'+t.from+'</span>'
+        +'<span class="abr-arrow">→</span>'
+        +'<span class="abr-to">'+t.to+'</span>'
+        +'<span class="abr-amt">'+t.amt.toFixed(2)+'€</span>';
+      abr.appendChild(div);
+    });
+  }
 }
 
 window.addExpense = function() {

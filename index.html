@@ -115,6 +115,11 @@ body { font-family: 'Source Sans 3', sans-serif; background: var(--bg); color: v
 .add-expense input:focus, .add-expense select:focus { border-color: var(--sand); }
 .add-expense select option { background: var(--surface); }
 .add-expense button { background: var(--sand); color: var(--bg); border: none; border-radius: 6px; padding: 8px 16px; cursor: pointer; font-weight: bold; font-size: 14px; }
+.exp-participants { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 8px; }
+.exp-part-label { font-size: 11px; color: var(--muted); margin-right: 2px; }
+.exp-part-chip { font-size: 12px; padding: 4px 10px; border-radius: 12px; border: 1px solid var(--border); background: var(--surface); color: var(--muted); cursor: pointer; user-select: none; transition: background 0.15s, color 0.15s; }
+.exp-part-chip.active { background: var(--sand); color: var(--bg); border-color: var(--sand); }
+.expense-parts { font-size: 11px; color: var(--muted); margin-top: 2px; }
 .abrechnung { background: var(--surface); border-radius: 8px; padding: 14px; margin-top: 12px; }
 .abrechnung-title { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; }
 .abrechnung-item { font-size: 14px; padding: 4px 0; }
@@ -262,6 +267,7 @@ body { font-family: 'Source Sans 3', sans-serif; background: var(--bg); color: v
           <select id="expWho"><option value="">Wer zahlt?</option></select>
           <button onclick="addExpense()">+</button>
         </div>
+        <div class="exp-participants" id="expParticipants"></div>
         <div class="abrechnung" id="abrechnung"></div>
       </div>
     </div>
@@ -613,20 +619,32 @@ function renderPacklist() {
 function renderBudget() {
   var members = data.members.length ? data.members : ['Silas','Niklas','Lena','Annika'];
   var total = data.expenses.reduce(function(s,e){ return s+parseFloat(e.amt||0); }, 0);
-  var perPerson = total / members.length;
-  var paid = {};
-  members.forEach(function(m){ paid[m] = 0; });
-  data.expenses.forEach(function(e){ if(paid[e.who]!==undefined) paid[e.who] += parseFloat(e.amt||0); });
 
+  // Per-expense participant-aware balance calculation
+  var balance = {};
+  members.forEach(function(m){ balance[m] = 0; });
+  data.expenses.forEach(function(e) {
+    var parts = (e.participants && e.participants.length) ? e.participants : members;
+    var share = parseFloat(e.amt||0) / parts.length;
+    if (balance[e.who] !== undefined) balance[e.who] += parseFloat(e.amt||0);
+    parts.forEach(function(p){ if (balance[p] !== undefined) balance[p] -= share; });
+  });
+
+  var avgPerPerson = members.length ? total / members.length : 0;
   var sumEl = document.getElementById('budgetSummary');
   sumEl.innerHTML = '<div class="budget-stat"><div class="val" style="color:var(--sand)">'+total.toFixed(2)+'€</div><div class="lbl">Gesamt</div></div>'
-    +'<div class="budget-stat"><div class="val" style="color:var(--teal)">'+perPerson.toFixed(2)+'€</div><div class="lbl">Pro Person</div></div>'
+    +'<div class="budget-stat"><div class="val" style="color:var(--teal)">'+avgPerPerson.toFixed(2)+'€</div><div class="lbl">Ø Pro Person</div></div>'
     +'<div class="budget-stat"><div class="val" style="color:var(--terra)">'+data.expenses.length+'</div><div class="lbl">Ausgaben</div></div>';
 
   var listEl = document.getElementById('expenseList'); listEl.innerHTML = '';
   data.expenses.forEach(function(exp, i) {
-    var row = document.createElement('div'); row.className = 'expense-item';
-    row.innerHTML = '<span class="expense-desc">'+exp.desc+'</span>'
+    var parts = (exp.participants && exp.participants.length) ? exp.participants : members;
+    var allPart = parts.length === members.length;
+    var row = document.createElement('div'); row.className = 'expense-item'; row.style.flexWrap = 'wrap';
+    var descHtml = '<div style="flex:1;min-width:0"><span class="expense-desc">'+exp.desc+'</span>';
+    if (!allPart) descHtml += '<div class="expense-parts">'+parts.join(', ')+'</div>';
+    descHtml += '</div>';
+    row.innerHTML = descHtml
       +'<span class="expense-who">'+exp.who+'</span>'
       +'<span class="expense-amt">'+parseFloat(exp.amt).toFixed(2)+'€</span>';
     var del = document.createElement('button'); del.className = 'expense-del'; del.innerHTML = '&times;';
@@ -638,10 +656,25 @@ function renderBudget() {
   sel.innerHTML = '<option value="">Wer zahlt?</option>';
   members.forEach(function(m){ sel.innerHTML += '<option value="'+m+'">'+m+'</option>'; });
 
+  // Participant chips
+  var partEl = document.getElementById('expParticipants');
+  if (partEl && !partEl.dataset.init) {
+    partEl.dataset.init = '1';
+    partEl.innerHTML = '<span class="exp-part-label">Beteiligt:</span>';
+    members.forEach(function(m) {
+      var chip = document.createElement('span');
+      chip.className = 'exp-part-chip active';
+      chip.textContent = m;
+      chip.dataset.member = m;
+      chip.onclick = function() { chip.classList.toggle('active'); };
+      partEl.appendChild(chip);
+    });
+  }
+
   var abr = document.getElementById('abrechnung');
   abr.innerHTML = '<div class="abrechnung-title">Abrechnung</div>';
   members.forEach(function(m) {
-    var diff = (paid[m]||0) - perPerson;
+    var diff = balance[m] || 0;
     var div = document.createElement('div');
     div.className = 'abrechnung-item ' + (diff >= 0 ? 'owed' : 'owes');
     div.textContent = diff >= 0
@@ -656,7 +689,11 @@ window.addExpense = function() {
   var amt  = document.getElementById('expAmt').value;
   var who  = document.getElementById('expWho').value;
   if (!desc || !amt || !who) { showToast('Alle Felder ausfüllen'); return; }
-  data.expenses.push({id:Date.now(), desc:desc, amt:parseFloat(amt), who:who});
+  var members = data.members.length ? data.members : ['Silas','Niklas','Lena','Annika'];
+  var chips = document.querySelectorAll('#expParticipants .exp-part-chip.active');
+  var participants = Array.from(chips).map(function(c){ return c.dataset.member; });
+  if (!participants.length) participants = members;
+  data.expenses.push({id:Date.now(), desc:desc, amt:parseFloat(amt), who:who, participants:participants});
   document.getElementById('expDesc').value='';
   document.getElementById('expAmt').value='';
   document.getElementById('expWho').value='';

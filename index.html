@@ -394,7 +394,9 @@ var data = {
   ],
   packlist: {
     Silas: [],
-    Kollege: []
+    Niklas: [],
+    Lena: [],
+    Annika: []
   },
   expenses: [],
   plan: [
@@ -609,7 +611,7 @@ function renderPacklist() {
 
 // ── BUDGET ─────────────────────────────────────
 function renderBudget() {
-  var members = data.members.length ? data.members : ['Silas','Kollege'];
+  var members = data.members.length ? data.members : ['Silas','Niklas','Lena','Annika'];
   var total = data.expenses.reduce(function(s,e){ return s+parseFloat(e.amt||0); }, 0);
   var perPerson = total / members.length;
   var paid = {};

@@ -696,19 +696,13 @@ function renderBudget() {
     });
   });
 
-  var paid = {}; members.forEach(function(m){ paid[m]=0; });
-
   var abr = document.getElementById('abrechnung');
   abr.innerHTML = '<div class="abrechnung-title">Abrechnung – wer schuldet wem was</div>';
 
   if (data.expenses.length === 0) {
     abr.innerHTML += '<div style="color:var(--muted);font-size:13px;margin-top:8px">Noch keine Ausgaben eingetragen</div>';
   } else {
-    // Calculate balances
-    var balances = {};
-    members.forEach(function(m){ balances[m] = (paid[m]||0) - perPerson; });
-
-    // Settle debts: find who owes whom
+    // Settle debts using balances already calculated above
     var debtors = members.filter(function(m){ return balances[m] < -0.01; }).map(function(m){ return {name:m, amt:-balances[m]}; });
     var creditors = members.filter(function(m){ return balances[m] > 0.01; }).map(function(m){ return {name:m, amt:balances[m]}; });
 

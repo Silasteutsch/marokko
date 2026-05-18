@@ -349,14 +349,14 @@ const TRIP_ID = 'agadir-juni-2026';
 // ── DEFAULT DATA ───────────────────────────────
 var data = {
   info: [
-    {label:'Flug Hin', icon:'✈️', value:''},
-    {label:'Flug Zurück', icon:'✈️', value:''},
-    {label:'Hotel', icon:'🏨', value:''},
-    {label:'Adresse', icon:'📍', value:''},
-    {label:'Check-in', icon:'🔑', value:''},
-    {label:'Check-out', icon:'🔑', value:''},
-    {label:'Buchungsnummer', icon:'📋', value:''},
-    {label:'Teilnehmer', icon:'👥', value:''}
+    {label:'Flug Hin', icon:'✈️', value:'FKB → AGA · Do. 4. Juni · 13:25–16:15 · FR9853 (Ryanair)'},
+    {label:'Flug Zurück', icon:'✈️', value:'AGA → FKB · Do. 11. Juni · 16:45–21:35 · FR9852 (Ryanair)'},
+    {label:'Hotel', icon:'🏨', value:'Heaven Surf Camp'},
+    {label:'Adresse', icon:'📍', value:'Rue Tamraght, 80023 Agadir, Marokko'},
+    {label:'Check-in', icon:'🔑', value:'Do. 4. Juni 2026'},
+    {label:'Check-out', icon:'🔑', value:'Do. 11. Juni 2026'},
+    {label:'Buchungsnummer', icon:'📋', value:'064725477'},
+    {label:'Teilnehmer', icon:'👥', value:'Silas, Niklas'}
   ],
   members: [],
   checklist: [
@@ -476,7 +476,12 @@ function loadData() {
   unsubscribe = onSnapshot(ref, function(snap) {
     if (snap.exists()) {
       var d = snap.data();
-      if (d.info) data.info = d.info;
+      if (d.info) {
+        d.info.forEach(function(item, i) {
+          if (data.info[i] && !item.value && data.info[i].value) item.value = data.info[i].value;
+        });
+        data.info = d.info;
+      }
       if (d.members) data.members = d.members;
       if (d.checklist) data.checklist = d.checklist;
       if (d.packlist) data.packlist = d.packlist;

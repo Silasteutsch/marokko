@@ -115,18 +115,6 @@ body { font-family: 'Source Sans 3', sans-serif; background: var(--bg); color: v
 .add-expense input:focus, .add-expense select:focus { border-color: var(--sand); }
 .add-expense select option { background: var(--surface); }
 .add-expense button { background: var(--sand); color: var(--bg); border: none; border-radius: 6px; padding: 8px 16px; cursor: pointer; font-weight: bold; font-size: 14px; }
-.exp-participants { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 8px; }
-.exp-part-label { font-size: 11px; color: var(--muted); margin-right: 2px; }
-.exp-part-chip { font-size: 12px; padding: 4px 10px; border-radius: 12px; border: 1px solid var(--border); background: var(--surface); color: var(--muted); cursor: pointer; user-select: none; transition: background 0.15s, color 0.15s; }
-.exp-part-chip.active { background: var(--sand); color: var(--bg); border-color: var(--sand); }
-.expense-parts { font-size: 11px; color: var(--muted); margin-top: 2px; }
-.abrechnung-transfer { display: flex; align-items: center; gap: 8px; font-size: 14px; padding: 6px 0; border-bottom: 1px solid var(--border); }
-.abrechnung-transfer:last-child { border-bottom: none; }
-.abr-from { color: var(--terra); font-weight: 600; }
-.abr-to { color: var(--teal); font-weight: 600; }
-.abr-arrow { color: var(--muted); font-size: 12px; }
-.abr-amt { margin-left: auto; font-weight: 700; color: var(--sand); }
-.abrechnung-settled { font-size: 13px; color: var(--teal); text-align: center; padding: 8px 0; }
 .abrechnung { background: var(--surface); border-radius: 8px; padding: 14px; margin-top: 12px; }
 .abrechnung-title { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; }
 .abrechnung-item { font-size: 14px; padding: 4px 0; }
@@ -268,13 +256,28 @@ body { font-family: 'Source Sans 3', sans-serif; background: var(--bg); color: v
         <div class="card-title"><span>&#128176;</span> Budget & Ausgaben</div>
         <div class="budget-summary" id="budgetSummary"></div>
         <div id="expenseList"></div>
-        <div class="add-expense">
-          <input type="text" id="expDesc" placeholder="Beschreibung">
-          <input type="number" id="expAmt" placeholder="Betrag (€)" style="width:120px">
-          <select id="expWho"><option value="">Wer zahlt?</option></select>
-          <button onclick="addExpense()">+</button>
+        <div class="add-expense-form" id="addExpenseForm">
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <input type="text" id="expDesc" placeholder="Beschreibung" style="flex:2;min-width:140px;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:8px 10px;font-size:13px;color:var(--text);font-family:inherit;outline:none;">
+            <input type="number" id="expAmt" placeholder="Betrag (€)" style="width:110px;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:8px 10px;font-size:13px;color:var(--text);font-family:inherit;outline:none;">
+            <select id="expWho" style="background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:8px 10px;font-size:13px;color:var(--text);font-family:inherit;outline:none;">
+              <option value="">Wer zahlt?</option>
+              <option>Silas</option><option>Niklas</option><option>Lena</option><option>Annika</option>
+            </select>
+          </div>
+          <div style="margin-top:8px">
+            <div style="font-size:11px;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px">Wer ist beteiligt?</div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap" id="expParticipants">
+              <label style="display:flex;align-items:center;gap:5px;font-size:13px;cursor:pointer"><input type="checkbox" value="Silas" checked> Silas</label>
+              <label style="display:flex;align-items:center;gap:5px;font-size:13px;cursor:pointer"><input type="checkbox" value="Niklas" checked> Niklas</label>
+              <label style="display:flex;align-items:center;gap:5px;font-size:13px;cursor:pointer"><input type="checkbox" value="Lena" checked> Lena</label>
+              <label style="display:flex;align-items:center;gap:5px;font-size:13px;cursor:pointer"><input type="checkbox" value="Annika" checked> Annika</label>
+            </div>
+          </div>
+          <div style="margin-top:8px">
+            <button onclick="addExpense()" style="background:var(--sand);color:var(--bg);border:none;border-radius:6px;padding:9px 20px;cursor:pointer;font-weight:700;font-family:inherit;font-size:14px;">Ausgabe hinzufügen</button>
+          </div>
         </div>
-        <div class="exp-participants" id="expParticipants"></div>
         <div class="abrechnung" id="abrechnung"></div>
       </div>
     </div>
@@ -413,17 +416,18 @@ var data = {
   },
   expenses: [],
   plan: [
-    {day:1, date:'01.06.', title:'Anreisetag', open:false, activities:[]},
-    {day:2, date:'02.06.', title:'Strandtag', open:false, activities:[]},
-    {day:3, date:'03.06.', title:'Erkunden', open:false, activities:[]},
-    {day:4, date:'04.06.', title:'Ausflug', open:false, activities:[]},
-    {day:5, date:'05.06.', title:'Entspannung', open:false, activities:[]},
-    {day:6, date:'06.06.', title:'Shoppen & Medina', open:false, activities:[]},
-    {day:7, date:'07.06.', title:'Letzter Tag', open:false, activities:[]},
-    {day:8, date:'08.06.', title:'Abreisetag', open:false, activities:[]}
+    {day:1, date:'01.06.', title:'', open:false, activities:[]},
+    {day:2, date:'02.06.', title:'', open:false, activities:[]},
+    {day:3, date:'03.06.', title:'', open:false, activities:[]},
+    {day:4, date:'04.06.', title:'', open:false, activities:[]},
+    {day:5, date:'05.06.', title:'', open:false, activities:[]},
+    {day:6, date:'06.06.', title:'', open:false, activities:[]},
+    {day:7, date:'07.06.', title:'', open:false, activities:[]},
+    {day:8, date:'08.06.', title:'', open:false, activities:[]}
   ],
   notes: [],
   polls: [],
+  settledTransactions: [],
   important: [
     {icon:'🚑', label:'Notruf Marokko', value:'15 / 19'},
     {icon:'🏥', label:'Nächstes Krankenhaus', value:'Clinique du Sud, Agadir'},
@@ -489,6 +493,7 @@ function loadData() {
       if (d.plan) data.plan = d.plan;
       if (d.notes) data.notes = d.notes;
       if (d.polls) data.polls = d.polls;
+      if (d.settledTransactions) data.settledTransactions = d.settledTransactions;
       if (d.important) data.important = d.important;
     }
     renderAll();
@@ -629,59 +634,74 @@ function renderPacklist() {
 
 // ── BUDGET ─────────────────────────────────────
 function renderBudget() {
-  var members = data.members.length ? data.members : ['Silas','Niklas','Lena','Annika'];
+  var members = ['Silas','Niklas','Lena','Annika'];
   var total = data.expenses.reduce(function(s,e){ return s+parseFloat(e.amt||0); }, 0);
 
-  // Per-expense participant-aware balance calculation
-  var balance = {};
-  members.forEach(function(m){ balance[m] = 0; });
-  data.expenses.forEach(function(e) {
-    var parts = (e.participants && e.participants.length) ? e.participants : members;
-    var share = parseFloat(e.amt||0) / parts.length;
-    if (balance[e.who] !== undefined) balance[e.who] += parseFloat(e.amt||0);
-    parts.forEach(function(p){ if (balance[p] !== undefined) balance[p] -= share; });
-  });
-
-  var avgPerPerson = members.length ? total / members.length : 0;
   var sumEl = document.getElementById('budgetSummary');
   sumEl.innerHTML = '<div class="budget-stat"><div class="val" style="color:var(--sand)">'+total.toFixed(2)+'€</div><div class="lbl">Gesamt</div></div>'
-    +'<div class="budget-stat"><div class="val" style="color:var(--teal)">'+avgPerPerson.toFixed(2)+'€</div><div class="lbl">Ø Pro Person</div></div>'
-    +'<div class="budget-stat"><div class="val" style="color:var(--terra)">'+data.expenses.length+'</div><div class="lbl">Ausgaben</div></div>';
+    +'<div class="budget-stat"><div class="val" style="color:var(--teal)">'+data.expenses.length+'</div><div class="lbl">Ausgaben</div></div>'
+    +'<div class="budget-stat"><div class="val" style="color:var(--terra)">'+members.length+'</div><div class="lbl">Personen</div></div>';
 
+  // Build expense list
   var listEl = document.getElementById('expenseList'); listEl.innerHTML = '';
   data.expenses.forEach(function(exp, i) {
-    var parts = (exp.participants && exp.participants.length) ? exp.participants : members;
-    var allPart = parts.length === members.length;
-    var row = document.createElement('div'); row.className = 'expense-item'; row.style.flexWrap = 'wrap';
-    var descHtml = '<div style="flex:1;min-width:0"><span class="expense-desc">'+exp.desc+'</span>';
-    if (!allPart) descHtml += '<div class="expense-parts">'+parts.join(', ')+'</div>';
-    descHtml += '</div>';
-    row.innerHTML = descHtml
-      +'<span class="expense-who">'+exp.who+'</span>'
-      +'<span class="expense-amt">'+parseFloat(exp.amt).toFixed(2)+'€</span>';
-    var del = document.createElement('button'); del.className = 'expense-del'; del.innerHTML = '&times;';
-    del.onclick = (function(idx){ return function(){ data.expenses.splice(idx,1); scheduleSave(); renderBudget(); }; })(i);
-    row.appendChild(del); listEl.appendChild(row);
+    var participants = exp.participants || members;
+    var share = parseFloat(exp.amt) / participants.length;
+    var settled = exp.settled || [];
+
+    var block = document.createElement('div');
+    block.style.cssText = 'border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:10px;background:var(--surface);';
+
+    var top = document.createElement('div');
+    top.style.cssText = 'display:flex;align-items:center;gap:10px;margin-bottom:8px;';
+    top.innerHTML = '<span style="flex:1;font-size:14px;font-weight:600">'+exp.desc+'</span>'
+      +'<span style="color:var(--muted);font-size:12px">bezahlt: <strong style="color:var(--text)">'+exp.who+'</strong></span>'
+      +'<span style="color:var(--sand);font-weight:700;font-size:15px">'+parseFloat(exp.amt).toFixed(2)+'€</span>';
+    var del = document.createElement('button'); del.className='expense-del'; del.innerHTML='&times;';
+    del.onclick=(function(idx){return function(){data.expenses.splice(idx,1);scheduleSave();renderBudget();};})(i);
+    top.appendChild(del); block.appendChild(top);
+
+    var details = document.createElement('div');
+    details.style.cssText = 'font-size:12px;color:var(--muted);margin-bottom:8px;';
+    details.textContent = 'Beteiligt: '+participants.join(', ')+' · '+share.toFixed(2)+'€ pro Person';
+    block.appendChild(details);
+
+    // Settlement per debtor
+    var settleRow = document.createElement('div');
+    settleRow.style.cssText = 'display:flex;gap:6px;flex-wrap:wrap;';
+    participants.forEach(function(p) {
+      if (p === exp.who) return; // payer doesn't owe themselves
+      var isSettled = settled.indexOf(p) >= 0;
+      var btn = document.createElement('button');
+      btn.style.cssText = 'font-size:11px;padding:3px 10px;border-radius:20px;border:1px solid '
+        +(isSettled?'var(--teal)':'var(--border)')
+        +';background:'+(isSettled?'rgba(123,175,158,0.15)':'transparent')
+        +';color:'+(isSettled?'var(--teal)':'var(--muted)')
+        +';cursor:pointer;font-family:inherit;';
+      btn.textContent = (isSettled?'✓ ':'') + p + ' ' + share.toFixed(2)+'€';
+      btn.title = isSettled ? 'Beglichen – klicken zum Rückgängig' : 'Klicken wenn beglichen';
+      btn.onclick=(function(eid,person){return function(){toggleSettled(eid,person);};})(exp.id,p);
+      settleRow.appendChild(btn);
+    });
+    block.appendChild(settleRow);
+    listEl.appendChild(block);
   });
 
-  var sel = document.getElementById('expWho');
-  sel.innerHTML = '<option value="">Wer zahlt?</option>';
-  members.forEach(function(m){ sel.innerHTML += '<option value="'+m+'">'+m+'</option>'; });
-
-  // Participant chips
-  var partEl = document.getElementById('expParticipants');
-  if (partEl && !partEl.dataset.init) {
-    partEl.dataset.init = '1';
-    partEl.innerHTML = '<span class="exp-part-label">Beteiligt:</span>';
-    members.forEach(function(m) {
-      var chip = document.createElement('span');
-      chip.className = 'exp-part-chip active';
-      chip.textContent = m;
-      chip.dataset.member = m;
-      chip.onclick = function() { chip.classList.toggle('active'); };
-      partEl.appendChild(chip);
+  // Calculate balances considering participants
+  var balances = {};
+  members.forEach(function(m){ balances[m] = 0; });
+  data.expenses.forEach(function(exp) {
+    var participants = exp.participants || members;
+    var settled = exp.settled || [];
+    var share = parseFloat(exp.amt) / participants.length;
+    // payer gets credit for everyone's share (minus their own, minus settled)
+    participants.forEach(function(p) {
+      if (p === exp.who) return;
+      if (settled.indexOf(p) >= 0) return; // already settled
+      balances[exp.who] = (balances[exp.who]||0) + share;
+      balances[p] = (balances[p]||0) - share;
     });
-  }
+  });
 
   // Settle debts: match debtors with creditors greedily
   var debtors = [], creditors = [];
@@ -702,19 +722,129 @@ function renderBudget() {
   }
 
   var abr = document.getElementById('abrechnung');
-  abr.innerHTML = '<div class="abrechnung-title">Abrechnung</div>';
-  if (!transfers.length) {
-    abr.innerHTML += '<div class="abrechnung-settled">Alle quitt ✓</div>';
+  abr.innerHTML = '<div class="abrechnung-title">Abrechnung – wer zahlt wem was</div>';
+
+  if (data.expenses.length === 0) {
+    abr.innerHTML += '<div style="color:var(--muted);font-size:13px;margin-top:8px">Noch keine Ausgaben eingetragen</div>';
   } else {
-    transfers.forEach(function(t) {
+    // Build exact debts per expense: who owes whom how much
+    // Structure: owes[debtor][creditor] = amount
+    var owes = {};
+    members.forEach(function(a){ owes[a] = {}; members.forEach(function(b){ owes[a][b] = 0; }); });
+
+    data.expenses.forEach(function(exp) {
+      var participants = exp.participants || members;
+      var settled = exp.settled || [];
+      var share = parseFloat(exp.amt) / participants.length;
+      participants.forEach(function(p) {
+        if (p === exp.who) return;
+        if (settled.indexOf(p) >= 0) return;
+        owes[p][exp.who] = (owes[p][exp.who] || 0) + share;
+      });
+    });
+
+    // Net out bilateral debts: if A owes B 30 and B owes A 10, A owes B 20
+    var transactions = [];
+    for (var i = 0; i < members.length; i++) {
+      for (var j = i+1; j < members.length; j++) {
+        var a = members[i], b = members[j];
+        var net = owes[a][b] - owes[b][a];
+        if (net > 0.01) transactions.push({from:a, to:b, amt:net});
+        else if (net < -0.01) transactions.push({from:b, to:a, amt:-net});
+      }
+    }
+
+    var settled = data.settledTransactions || [];
+    var openCount = 0;
+
+    transactions.forEach(function(t) {
+      var key = t.from+'→'+t.to+'→'+t.amt.toFixed(2);
+      var isSettled = settled.indexOf(key) >= 0;
+      if (!isSettled) openCount++;
+
       var div = document.createElement('div');
-      div.className = 'abrechnung-transfer';
-      div.innerHTML = '<span class="abr-from">'+t.from+'</span>'
-        +'<span class="abr-arrow">→</span>'
-        +'<span class="abr-to">'+t.to+'</span>'
-        +'<span class="abr-amt">'+t.amt.toFixed(2)+'€</span>';
+      div.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:12px 16px;'
+        +'background:'+(isSettled?'rgba(123,175,158,0.08)':'var(--surface)')
+        +';border-radius:10px;margin-top:8px;border:1px solid '
+        +(isSettled?'var(--teal)':'var(--border)')+';gap:12px;';
+
+      var left = document.createElement('div');
+      left.style.cssText = 'display:flex;align-items:center;gap:10px;flex:1;';
+
+      if (isSettled) {
+        left.innerHTML = '<span style="font-size:20px">✅</span>'
+          +'<span style="font-size:14px;color:var(--muted);text-decoration:line-through">'
+          +'<strong>'+t.from+'</strong> zahlt an <strong>'+t.to+'</strong></span>';
+      } else {
+        left.innerHTML = '<span style="font-size:20px">💸</span>'
+          +'<span style="font-size:14px"><strong style="color:var(--terra)">'+t.from+'</strong>'
+          +' <span style="color:var(--muted)">zahlt an</span> '
+          +'<strong style="color:var(--teal)">'+t.to+'</strong></span>';
+      }
+
+      var right = document.createElement('div');
+      right.style.cssText = 'display:flex;align-items:center;gap:10px;flex-shrink:0;';
+
+      var amt = document.createElement('span');
+      amt.style.cssText = 'font-weight:700;font-size:16px;color:'+(isSettled?'var(--muted)':'var(--sand)');
+      amt.textContent = t.amt.toFixed(2)+'€';
+
+      var btn = document.createElement('button');
+      if (isSettled) {
+        btn.style.cssText = 'padding:8px 14px;border-radius:8px;border:1px solid var(--teal);'
+          +'background:rgba(123,175,158,0.15);color:var(--teal);cursor:pointer;font-family:inherit;font-size:12px;font-weight:600;white-space:nowrap;';
+        btn.textContent = '✓ Beglichen';
+      } else {
+        btn.style.cssText = 'padding:8px 14px;border-radius:8px;border:none;'
+          +'background:var(--teal);color:#1a1a2e;cursor:pointer;font-family:inherit;font-size:13px;font-weight:700;white-space:nowrap;';
+        btn.textContent = 'Als beglichen markieren';
+      }
+      btn.onclick = (function(k, settled_ref){ return function(){
+        var idx = data.settledTransactions.indexOf(k);
+        if (idx >= 0) data.settledTransactions.splice(idx, 1);
+        else data.settledTransactions.push(k);
+        scheduleSave(); renderBudget();
+      }; })(key);
+
+      right.appendChild(amt);
+      right.appendChild(btn);
+      div.appendChild(left);
+      div.appendChild(right);
       abr.appendChild(div);
     });
+
+    if (transactions.length === 0 || openCount === 0) {
+      var allDone = document.createElement('div');
+      allDone.style.cssText = 'text-align:center;padding:16px;color:var(--teal);font-size:14px;margin-top:8px;';
+      allDone.innerHTML = '&#10003; Alle Schulden beglichen – ihr seid quitt!';
+      abr.appendChild(allDone);
+    }
+
+    // Per-person balance overview
+    var sumDiv = document.createElement('div');
+    sumDiv.style.cssText = 'margin-top:16px;padding-top:12px;border-top:1px solid var(--border)';
+    sumDiv.innerHTML = '<div class="abrechnung-title" style="margin-bottom:8px">Übersicht pro Person</div>';
+    members.forEach(function(m) {
+      var totalPaid = data.expenses.filter(function(e){ return e.who===m; }).reduce(function(s,e){ return s+parseFloat(e.amt); }, 0);
+      var totalOwed = 0;
+      data.expenses.forEach(function(exp) {
+        var participants = exp.participants || members;
+        var settled = exp.settled || [];
+        if (participants.indexOf(m) >= 0 && exp.who !== m && settled.indexOf(m) < 0) {
+          totalOwed += parseFloat(exp.amt) / participants.length;
+        }
+      });
+      var net = totalPaid - totalOwed;
+      var row = document.createElement('div');
+      row.style.cssText = 'display:flex;justify-content:space-between;align-items:center;font-size:13px;padding:6px 0;border-bottom:1px solid var(--border)';
+      var color = net >= 0 ? 'var(--teal)' : 'var(--terra)';
+      var label = net >= 0 ? 'bekommt '+net.toFixed(2)+'€ zurück' : 'schuldet noch '+Math.abs(net).toFixed(2)+'€';
+      row.innerHTML = '<span style="font-weight:600">'+m+'</span>'
+        +'<span style="font-size:11px;color:var(--muted)">gezahlt: '+totalPaid.toFixed(2)+'€ | anteilig: '+totalOwed.toFixed(2)+'€</span>'
+        +'<span style="color:'+color+';font-weight:600">'+label+'</span>';
+      sumDiv.appendChild(row);
+    });
+    abr.appendChild(sumDiv);
   }
 }
 
@@ -722,15 +852,24 @@ window.addExpense = function() {
   var desc = document.getElementById('expDesc').value.trim();
   var amt  = document.getElementById('expAmt').value;
   var who  = document.getElementById('expWho').value;
-  if (!desc || !amt || !who) { showToast('Alle Felder ausfüllen'); return; }
-  var members = data.members.length ? data.members : ['Silas','Niklas','Lena','Annika'];
-  var chips = document.querySelectorAll('#expParticipants .exp-part-chip.active');
-  var participants = Array.from(chips).map(function(c){ return c.dataset.member; });
-  if (!participants.length) participants = members;
-  data.expenses.push({id:Date.now(), desc:desc, amt:parseFloat(amt), who:who, participants:participants});
+  var boxes = document.querySelectorAll('#expParticipants input[type=checkbox]:checked');
+  var participants = Array.from(boxes).map(function(b){ return b.value; });
+  if (!desc || !amt || !who) { showToast('Beschreibung, Betrag und Zahler angeben'); return; }
+  if (participants.length === 0) { showToast('Mind. eine Person beteiligen'); return; }
+  data.expenses.push({id:Date.now(), desc:desc, amt:parseFloat(amt), who:who, participants:participants, settled:[]});
   document.getElementById('expDesc').value='';
   document.getElementById('expAmt').value='';
   document.getElementById('expWho').value='';
+  scheduleSave(); renderBudget();
+};
+
+window.toggleSettled = function(expId, person) {
+  var exp = data.expenses.find(function(e){ return e.id===expId; });
+  if (!exp) return;
+  if (!exp.settled) exp.settled = [];
+  var idx = exp.settled.indexOf(person);
+  if (idx >= 0) exp.settled.splice(idx, 1);
+  else exp.settled.push(person);
   scheduleSave(); renderBudget();
 };
 
@@ -739,11 +878,25 @@ function renderPlan() {
   var el = document.getElementById('planContainer'); el.innerHTML = '';
   data.plan.forEach(function(day, di) {
     var block = document.createElement('div'); block.className = 'day-block';
-    block.innerHTML = '<div class="day-header" onclick="toggleDay('+di+')">'
-      +'<div class="day-num">'+day.day+'</div>'
-      +'<div class="day-title">'+day.title+'</div>'
-      +'<div class="day-date">'+day.date+'</div>'
-      +'</div>';
+    var header = document.createElement('div'); header.className = 'day-header';
+    header.onclick = (function(d){ return function(e){ if(e.target.tagName!=='INPUT') toggleDay(d); }; })(di);
+
+    var dayNum = document.createElement('div'); dayNum.className = 'day-num'; dayNum.textContent = day.day;
+    
+    var dayTitle = document.createElement('input');
+    dayTitle.style.cssText = 'background:transparent;border:none;color:var(--text);font-size:14px;font-weight:600;font-family:inherit;flex:1;outline:none;cursor:text;';
+    dayTitle.value = day.title; dayTitle.placeholder = 'Titel...';
+    dayTitle.onclick = function(e){ e.stopPropagation(); };
+    dayTitle.onchange = (function(d){ return function(){ data.plan[d].title=this.value; scheduleSave(); }; })(di);
+
+    var dayDate = document.createElement('input');
+    dayDate.style.cssText = 'background:transparent;border:none;color:var(--muted);font-size:12px;font-family:inherit;width:60px;outline:none;text-align:right;cursor:text;';
+    dayDate.value = day.date; dayDate.placeholder = 'Datum';
+    dayDate.onclick = function(e){ e.stopPropagation(); };
+    dayDate.onchange = (function(d){ return function(){ data.plan[d].date=this.value; scheduleSave(); }; })(di);
+
+    header.appendChild(dayNum); header.appendChild(dayTitle); header.appendChild(dayDate);
+    block.appendChild(header);
     var items = document.createElement('div');
     items.className = 'day-items' + (day.open ? ' open' : '');
     items.id = 'day-'+di;

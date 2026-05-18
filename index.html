@@ -256,11 +256,27 @@ body { font-family: 'Source Sans 3', sans-serif; background: var(--bg); color: v
         <div class="card-title"><span>&#128176;</span> Budget & Ausgaben</div>
         <div class="budget-summary" id="budgetSummary"></div>
         <div id="expenseList"></div>
-        <div class="add-expense">
-          <input type="text" id="expDesc" placeholder="Beschreibung">
-          <input type="number" id="expAmt" placeholder="Betrag (€)" style="width:120px">
-          <select id="expWho"><option value="">Wer zahlt?</option></select>
-          <button onclick="addExpense()">+</button>
+        <div class="add-expense-form" id="addExpenseForm">
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <input type="text" id="expDesc" placeholder="Beschreibung" style="flex:2;min-width:140px;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:8px 10px;font-size:13px;color:var(--text);font-family:inherit;outline:none;">
+            <input type="number" id="expAmt" placeholder="Betrag (€)" style="width:110px;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:8px 10px;font-size:13px;color:var(--text);font-family:inherit;outline:none;">
+            <select id="expWho" style="background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:8px 10px;font-size:13px;color:var(--text);font-family:inherit;outline:none;">
+              <option value="">Wer zahlt?</option>
+              <option>Silas</option><option>Niklas</option><option>Lena</option><option>Annika</option>
+            </select>
+          </div>
+          <div style="margin-top:8px">
+            <div style="font-size:11px;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px">Wer ist beteiligt?</div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap" id="expParticipants">
+              <label style="display:flex;align-items:center;gap:5px;font-size:13px;cursor:pointer"><input type="checkbox" value="Silas" checked> Silas</label>
+              <label style="display:flex;align-items:center;gap:5px;font-size:13px;cursor:pointer"><input type="checkbox" value="Niklas" checked> Niklas</label>
+              <label style="display:flex;align-items:center;gap:5px;font-size:13px;cursor:pointer"><input type="checkbox" value="Lena" checked> Lena</label>
+              <label style="display:flex;align-items:center;gap:5px;font-size:13px;cursor:pointer"><input type="checkbox" value="Annika" checked> Annika</label>
+            </div>
+          </div>
+          <div style="margin-top:8px">
+            <button onclick="addExpense()" style="background:var(--sand);color:var(--bg);border:none;border-radius:6px;padding:9px 20px;cursor:pointer;font-weight:700;font-family:inherit;font-size:14px;">Ausgabe hinzufügen</button>
+          </div>
         </div>
         <div class="abrechnung" id="abrechnung"></div>
       </div>
@@ -611,32 +627,76 @@ function renderPacklist() {
 
 // ── BUDGET ─────────────────────────────────────
 function renderBudget() {
-  var members = data.members.length ? data.members : ['Silas','Niklas','Lena','Annika'];
+  var members = ['Silas','Niklas','Lena','Annika'];
   var total = data.expenses.reduce(function(s,e){ return s+parseFloat(e.amt||0); }, 0);
-  var perPerson = total / members.length;
-  var paid = {};
-  members.forEach(function(m){ paid[m] = 0; });
-  data.expenses.forEach(function(e){ if(paid[e.who]!==undefined) paid[e.who] += parseFloat(e.amt||0); });
 
   var sumEl = document.getElementById('budgetSummary');
   sumEl.innerHTML = '<div class="budget-stat"><div class="val" style="color:var(--sand)">'+total.toFixed(2)+'€</div><div class="lbl">Gesamt</div></div>'
-    +'<div class="budget-stat"><div class="val" style="color:var(--teal)">'+perPerson.toFixed(2)+'€</div><div class="lbl">Pro Person</div></div>'
-    +'<div class="budget-stat"><div class="val" style="color:var(--terra)">'+data.expenses.length+'</div><div class="lbl">Ausgaben</div></div>';
+    +'<div class="budget-stat"><div class="val" style="color:var(--teal)">'+data.expenses.length+'</div><div class="lbl">Ausgaben</div></div>'
+    +'<div class="budget-stat"><div class="val" style="color:var(--terra)">'+members.length+'</div><div class="lbl">Personen</div></div>';
 
+  // Build expense list
   var listEl = document.getElementById('expenseList'); listEl.innerHTML = '';
   data.expenses.forEach(function(exp, i) {
-    var row = document.createElement('div'); row.className = 'expense-item';
-    row.innerHTML = '<span class="expense-desc">'+exp.desc+'</span>'
-      +'<span class="expense-who">'+exp.who+'</span>'
-      +'<span class="expense-amt">'+parseFloat(exp.amt).toFixed(2)+'€</span>';
-    var del = document.createElement('button'); del.className = 'expense-del'; del.innerHTML = '&times;';
-    del.onclick = (function(idx){ return function(){ data.expenses.splice(idx,1); scheduleSave(); renderBudget(); }; })(i);
-    row.appendChild(del); listEl.appendChild(row);
+    var participants = exp.participants || members;
+    var share = parseFloat(exp.amt) / participants.length;
+    var settled = exp.settled || [];
+
+    var block = document.createElement('div');
+    block.style.cssText = 'border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:10px;background:var(--surface);';
+
+    var top = document.createElement('div');
+    top.style.cssText = 'display:flex;align-items:center;gap:10px;margin-bottom:8px;';
+    top.innerHTML = '<span style="flex:1;font-size:14px;font-weight:600">'+exp.desc+'</span>'
+      +'<span style="color:var(--muted);font-size:12px">bezahlt: <strong style="color:var(--text)">'+exp.who+'</strong></span>'
+      +'<span style="color:var(--sand);font-weight:700;font-size:15px">'+parseFloat(exp.amt).toFixed(2)+'€</span>';
+    var del = document.createElement('button'); del.className='expense-del'; del.innerHTML='&times;';
+    del.onclick=(function(idx){return function(){data.expenses.splice(idx,1);scheduleSave();renderBudget();};})(i);
+    top.appendChild(del); block.appendChild(top);
+
+    var details = document.createElement('div');
+    details.style.cssText = 'font-size:12px;color:var(--muted);margin-bottom:8px;';
+    details.textContent = 'Beteiligt: '+participants.join(', ')+' · '+share.toFixed(2)+'€ pro Person';
+    block.appendChild(details);
+
+    // Settlement per debtor
+    var settleRow = document.createElement('div');
+    settleRow.style.cssText = 'display:flex;gap:6px;flex-wrap:wrap;';
+    participants.forEach(function(p) {
+      if (p === exp.who) return; // payer doesn't owe themselves
+      var isSettled = settled.indexOf(p) >= 0;
+      var btn = document.createElement('button');
+      btn.style.cssText = 'font-size:11px;padding:3px 10px;border-radius:20px;border:1px solid '
+        +(isSettled?'var(--teal)':'var(--border)')
+        +';background:'+(isSettled?'rgba(123,175,158,0.15)':'transparent')
+        +';color:'+(isSettled?'var(--teal)':'var(--muted)')
+        +';cursor:pointer;font-family:inherit;';
+      btn.textContent = (isSettled?'✓ ':'') + p + ' ' + share.toFixed(2)+'€';
+      btn.title = isSettled ? 'Beglichen – klicken zum Rückgängig' : 'Klicken wenn beglichen';
+      btn.onclick=(function(eid,person){return function(){toggleSettled(eid,person);};})(exp.id,p);
+      settleRow.appendChild(btn);
+    });
+    block.appendChild(settleRow);
+    listEl.appendChild(block);
   });
 
-  var sel = document.getElementById('expWho');
-  sel.innerHTML = '<option value="">Wer zahlt?</option>';
-  members.forEach(function(m){ sel.innerHTML += '<option value="'+m+'">'+m+'</option>'; });
+  // Calculate balances considering participants
+  var balances = {};
+  members.forEach(function(m){ balances[m] = 0; });
+  data.expenses.forEach(function(exp) {
+    var participants = exp.participants || members;
+    var settled = exp.settled || [];
+    var share = parseFloat(exp.amt) / participants.length;
+    // payer gets credit for everyone's share (minus their own, minus settled)
+    participants.forEach(function(p) {
+      if (p === exp.who) return;
+      if (settled.indexOf(p) >= 0) return; // already settled
+      balances[exp.who] = (balances[exp.who]||0) + share;
+      balances[p] = (balances[p]||0) - share;
+    });
+  });
+
+  var paid = {}; members.forEach(function(m){ paid[m]=0; });
 
   var abr = document.getElementById('abrechnung');
   abr.innerHTML = '<div class="abrechnung-title">Abrechnung – wer schuldet wem was</div>';
@@ -706,11 +766,24 @@ window.addExpense = function() {
   var desc = document.getElementById('expDesc').value.trim();
   var amt  = document.getElementById('expAmt').value;
   var who  = document.getElementById('expWho').value;
-  if (!desc || !amt || !who) { showToast('Alle Felder ausfüllen'); return; }
-  data.expenses.push({id:Date.now(), desc:desc, amt:parseFloat(amt), who:who});
+  var boxes = document.querySelectorAll('#expParticipants input[type=checkbox]:checked');
+  var participants = Array.from(boxes).map(function(b){ return b.value; });
+  if (!desc || !amt || !who) { showToast('Beschreibung, Betrag und Zahler angeben'); return; }
+  if (participants.length === 0) { showToast('Mind. eine Person beteiligen'); return; }
+  data.expenses.push({id:Date.now(), desc:desc, amt:parseFloat(amt), who:who, participants:participants, settled:[]});
   document.getElementById('expDesc').value='';
   document.getElementById('expAmt').value='';
   document.getElementById('expWho').value='';
+  scheduleSave(); renderBudget();
+};
+
+window.toggleSettled = function(expId, person) {
+  var exp = data.expenses.find(function(e){ return e.id===expId; });
+  if (!exp) return;
+  if (!exp.settled) exp.settled = [];
+  var idx = exp.settled.indexOf(person);
+  if (idx >= 0) exp.settled.splice(idx, 1);
+  else exp.settled.push(person);
   scheduleSave(); renderBudget();
 };
 

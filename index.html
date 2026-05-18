@@ -427,6 +427,7 @@ var data = {
   ],
   notes: [],
   polls: [],
+  settledTransactions: [],
   important: [
     {icon:'🚑', label:'Notruf Marokko', value:'15 / 19'},
     {icon:'🏥', label:'Nächstes Krankenhaus', value:'Clinique du Sud, Agadir'},
@@ -487,6 +488,7 @@ function loadData() {
       if (d.plan) data.plan = d.plan;
       if (d.notes) data.notes = d.notes;
       if (d.polls) data.polls = d.polls;
+      if (d.settledTransactions) data.settledTransactions = d.settledTransactions;
       if (d.important) data.important = d.important;
     }
     renderAll();
@@ -729,18 +731,70 @@ function renderBudget() {
       }
     }
 
-    if (transactions.length === 0) {
-      abr.innerHTML += '<div style="color:var(--teal);font-size:14px;margin-top:10px">&#10003; Alles ausgeglichen</div>';
-    } else {
-      transactions.forEach(function(t) {
-        var div = document.createElement('div');
-        div.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--surface);border-radius:8px;margin-top:8px;';
-        div.innerHTML = '<span style="font-size:14px"><strong style="color:var(--terra)">'+t.from+'</strong>'
+    var settled = data.settledTransactions || [];
+    var openCount = 0;
+
+    transactions.forEach(function(t) {
+      var key = t.from+'→'+t.to+'→'+t.amt.toFixed(2);
+      var isSettled = settled.indexOf(key) >= 0;
+      if (!isSettled) openCount++;
+
+      var div = document.createElement('div');
+      div.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:12px 16px;'
+        +'background:'+(isSettled?'rgba(123,175,158,0.08)':'var(--surface)')
+        +';border-radius:10px;margin-top:8px;border:1px solid '
+        +(isSettled?'var(--teal)':'var(--border)')+';gap:12px;';
+
+      var left = document.createElement('div');
+      left.style.cssText = 'display:flex;align-items:center;gap:10px;flex:1;';
+
+      if (isSettled) {
+        left.innerHTML = '<span style="font-size:20px">✅</span>'
+          +'<span style="font-size:14px;color:var(--muted);text-decoration:line-through">'
+          +'<strong>'+t.from+'</strong> zahlt an <strong>'+t.to+'</strong></span>';
+      } else {
+        left.innerHTML = '<span style="font-size:20px">💸</span>'
+          +'<span style="font-size:14px"><strong style="color:var(--terra)">'+t.from+'</strong>'
           +' <span style="color:var(--muted)">zahlt an</span> '
-          +'<strong style="color:var(--teal)">'+t.to+'</strong></span>'
-          +'<span style="color:var(--sand);font-weight:700;font-size:16px">'+t.amt.toFixed(2)+'€</span>';
-        abr.appendChild(div);
-      });
+          +'<strong style="color:var(--teal)">'+t.to+'</strong></span>';
+      }
+
+      var right = document.createElement('div');
+      right.style.cssText = 'display:flex;align-items:center;gap:10px;flex-shrink:0;';
+
+      var amt = document.createElement('span');
+      amt.style.cssText = 'font-weight:700;font-size:16px;color:'+(isSettled?'var(--muted)':'var(--sand)');
+      amt.textContent = t.amt.toFixed(2)+'€';
+
+      var btn = document.createElement('button');
+      if (isSettled) {
+        btn.style.cssText = 'padding:8px 14px;border-radius:8px;border:1px solid var(--teal);'
+          +'background:rgba(123,175,158,0.15);color:var(--teal);cursor:pointer;font-family:inherit;font-size:12px;font-weight:600;white-space:nowrap;';
+        btn.textContent = '✓ Beglichen';
+      } else {
+        btn.style.cssText = 'padding:8px 14px;border-radius:8px;border:none;'
+          +'background:var(--teal);color:#1a1a2e;cursor:pointer;font-family:inherit;font-size:13px;font-weight:700;white-space:nowrap;';
+        btn.textContent = 'Als beglichen markieren';
+      }
+      btn.onclick = (function(k, settled_ref){ return function(){
+        var idx = data.settledTransactions.indexOf(k);
+        if (idx >= 0) data.settledTransactions.splice(idx, 1);
+        else data.settledTransactions.push(k);
+        scheduleSave(); renderBudget();
+      }; })(key);
+
+      right.appendChild(amt);
+      right.appendChild(btn);
+      div.appendChild(left);
+      div.appendChild(right);
+      abr.appendChild(div);
+    });
+
+    if (transactions.length === 0 || openCount === 0) {
+      var allDone = document.createElement('div');
+      allDone.style.cssText = 'text-align:center;padding:16px;color:var(--teal);font-size:14px;margin-top:8px;';
+      allDone.innerHTML = '&#10003; Alle Schulden beglichen – ihr seid quitt!';
+      abr.appendChild(allDone);
     }
 
     // Per-person balance overview

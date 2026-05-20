@@ -323,6 +323,14 @@ body { font-family: 'Source Sans 3', sans-serif; background: var(--bg); color: v
         <div class="card-title"><span>&#128737;</span> Wichtige Infos & Notfallnummern</div>
         <div id="importantList"></div>
       </div>
+      <div class="card">
+        <div class="card-title"><span>&#128161;</span> Reiseregeln & Tipps</div>
+        <div id="tipsList"></div>
+        <div class="add-check-row" style="padding:0;margin-top:12px">
+          <input type="text" id="tipInput" placeholder="z.B. Kein Leitungswasser trinken">
+          <button onclick="addTip()">+</button>
+        </div>
+      </div>
     </div>
 
   </div>
@@ -436,7 +444,8 @@ var data = {
     {icon:'💳', label:'Kreditkarten-Notfallnummer', value:''},
     {icon:'🇩🇪', label:'Deutsche Botschaft Rabat', value:'+212 537 21 56 31'},
     {icon:'💱', label:'Wechselkurs', value:'1 EUR ≈ 10.8 MAD'}
-  ]
+  ],
+  tips: []
 };
 
 var saveTimer = null;
@@ -490,11 +499,12 @@ function loadData() {
       if (d.checklist) data.checklist = d.checklist;
       if (d.packlist) data.packlist = d.packlist;
       if (d.expenses) data.expenses = d.expenses;
-      if (d.plan) data.plan = d.plan;
+      if (d.plan && d.plan.length > 0) data.plan = d.plan;
       if (d.notes) data.notes = d.notes;
       if (d.polls) data.polls = d.polls;
       if (d.settledTransactions) data.settledTransactions = d.settledTransactions;
-      if (d.important) data.important = d.important;
+      if (d.important && d.important.length > 0) data.important = d.important;
+      if (d.tips) data.tips = d.tips;
     }
     renderAll();
     setSyncing(false);
@@ -529,6 +539,7 @@ function renderAll() {
   renderNotes();
   renderPolls();
   renderImportant();
+  renderTips();
 }
 
 // ── INFO ───────────────────────────────────────
@@ -1014,6 +1025,35 @@ function renderImportant() {
     row.children[1].appendChild(inp); el.appendChild(row);
   });
 }
+
+// ── TIPS ───────────────────────────────────────
+function renderTips() {
+  var el = document.getElementById('tipsList'); el.innerHTML = '';
+  if (!data.tips.length) {
+    el.innerHTML = '<div style="font-size:13px;color:var(--muted);padding:8px 0">Noch keine Tipps eingetragen.</div>';
+    return;
+  }
+  data.tips.forEach(function(tip, i) {
+    var row = document.createElement('div');
+    row.style.cssText = 'display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);font-size:14px;';
+    var icon = document.createElement('span'); icon.textContent = '💡'; icon.style.flexShrink = '0';
+    var text = document.createElement('span'); text.textContent = tip; text.style.flex = '1';
+    var del = document.createElement('button'); del.className = 'expense-del'; del.innerHTML = '&times;';
+    del.onclick = (function(idx){ return function(){ data.tips.splice(idx,1); scheduleSave(); renderTips(); }; })(i);
+    row.appendChild(icon); row.appendChild(text); row.appendChild(del);
+    el.appendChild(row);
+  });
+  el.lastChild.style.borderBottom = 'none';
+}
+
+window.addTip = function() {
+  var inp = document.getElementById('tipInput');
+  var val = inp.value.trim();
+  if (!val) return;
+  data.tips.push(val);
+  inp.value = '';
+  scheduleSave(); renderTips();
+};
 
 // ── TOAST ──────────────────────────────────────
 function showToast(msg) {

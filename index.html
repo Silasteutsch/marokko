@@ -730,24 +730,6 @@ function renderBudget() {
     });
   });
 
-  // Settle debts: match debtors with creditors greedily
-  var debtors = [], creditors = [];
-  members.forEach(function(m) {
-    var b = Math.round((balance[m] || 0) * 100) / 100;
-    if (b < -0.005) debtors.push({name: m, amt: -b});
-    else if (b > 0.005) creditors.push({name: m, amt: b});
-  });
-  var transfers = [];
-  var d = 0, c = 0;
-  while (d < debtors.length && c < creditors.length) {
-    var pay = Math.min(debtors[d].amt, creditors[c].amt);
-    transfers.push({from: debtors[d].name, to: creditors[c].name, amt: pay});
-    debtors[d].amt -= pay;
-    creditors[c].amt -= pay;
-    if (debtors[d].amt < 0.005) d++;
-    if (creditors[c].amt < 0.005) c++;
-  }
-
   var abr = document.getElementById('abrechnung');
   abr.innerHTML = '<div class="abrechnung-title">Abrechnung – wer zahlt wem was</div>';
 

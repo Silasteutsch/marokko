@@ -366,8 +366,7 @@ var data = {
     {label:'Adresse', icon:'📍', value:'Rue Tamraght, 80023 Agadir, Marokko'},
     {label:'Check-in', icon:'🔑', value:'Do. 4. Juni 2026'},
     {label:'Check-out', icon:'🔑', value:'Do. 11. Juni 2026'},
-    {label:'Buchungsnummer', icon:'📋', value:'064725477'},
-    {label:'Teilnehmer', icon:'👥', value:'Silas, Niklas'}
+    {label:'Buchungsnummer', icon:'📋', value:'064725477'}
   ],
   members: [],
   checklist: [
@@ -490,20 +489,37 @@ function loadData() {
     if (snap.exists()) {
       var d = snap.data();
       if (d.info) {
-        d.info.forEach(function(item, i) {
-          if (data.info[i] && !item.value && data.info[i].value) item.value = data.info[i].value;
+        d.info.forEach(function(saved, i) {
+          if (i < data.info.length) {
+            // Use saved value if it exists, otherwise keep default
+            if (saved.value !== undefined && saved.value !== '') data.info[i].value = saved.value;
+          }
         });
-        data.info = d.info;
       }
       if (d.members) data.members = d.members;
       if (d.checklist) data.checklist = d.checklist;
       if (d.packlist) data.packlist = d.packlist;
       if (d.expenses) data.expenses = d.expenses;
-      if (d.plan && d.plan.length > 0) data.plan = d.plan;
+      // Merge plan: keep default structure, apply saved titles/activities on top
+      if (d.plan) {
+        d.plan.forEach(function(saved, i) {
+          if (i < data.plan.length) {
+            if (saved.title !== undefined) data.plan[i].title = saved.title;
+            if (saved.date !== undefined) data.plan[i].date = saved.date;
+            if (saved.activities) data.plan[i].activities = saved.activities;
+            data.plan[i].open = saved.open || false;
+          }
+        });
+      }
       if (d.notes) data.notes = d.notes;
       if (d.polls) data.polls = d.polls;
       if (d.settledTransactions) data.settledTransactions = d.settledTransactions;
-      if (d.important && d.important.length > 0) data.important = d.important;
+      // Merge important: keep default items, only overwrite values from Firestore
+      if (d.important) {
+        d.important.forEach(function(saved, i) {
+          if (i < data.important.length && saved.value !== undefined) data.important[i].value = saved.value;
+        });
+      }
       if (d.tips) data.tips = d.tips;
     }
     renderAll();

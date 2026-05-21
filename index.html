@@ -191,7 +191,7 @@ body { font-family: 'Source Sans 3', sans-serif; background: var(--bg); color: v
   <div class="login-box">
     <h1>AGADIR HUB</h1>
     <div class="sub">Reise-Zentrale</div>
-    <div class="dates">01. Juni – 08. Juni 2026 · Marokko</div>
+    <div class="dates">04. Juni – 11. Juni 2026 · Marokko</div>
     <button class="google-btn" onclick="signIn()">
       <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
       Mit Google anmelden
@@ -205,7 +205,7 @@ body { font-family: 'Source Sans 3', sans-serif; background: var(--bg); color: v
   <div class="header">
     <div>
       <div class="header-title">AGADIR HUB</div>
-      <div class="header-sub">01.–08. Juni 2026 · Marokko</div>
+      <div class="header-sub">04.–11. Juni 2026 · Marokko</div>
     </div>
     <div class="header-right">
       <div class="sync-dot" id="syncDot"></div>
@@ -222,6 +222,7 @@ body { font-family: 'Source Sans 3', sans-serif; background: var(--bg); color: v
     <button class="nav-tab" onclick="showSection('notes')">&#128204; Pinnwand</button>
     <button class="nav-tab" onclick="showSection('polls')">&#128202; Abstimmung</button>
     <button class="nav-tab" onclick="showSection('important')">&#128737; Wichtiges</button>
+    <button class="nav-tab" onclick="showSection('history')">&#128336; Verlauf</button>
   </div>
 
   <div class="content">
@@ -331,6 +332,14 @@ body { font-family: 'Source Sans 3', sans-serif; background: var(--bg); color: v
           <input type="text" id="tipInput" placeholder="z.B. Kein Leitungswasser trinken">
           <button onclick="addTip()">+</button>
         </div>
+      </div>
+    </div>
+
+    <!-- VERLAUF -->
+    <div class="section" id="section-history">
+      <div class="card">
+        <div class="card-title"><span>&#128336;</span> Verlauf</div>
+        <div id="historyList"></div>
       </div>
     </div>
 
@@ -446,7 +455,8 @@ var data = {
     {icon:'🇩🇪', label:'Deutsche Botschaft Rabat', value:'+212 537 21 56 31'},
     {icon:'💱', label:'Wechselkurs', value:'1 EUR ≈ 10.8 MAD'}
   ],
-  tips: []
+  tips: [],
+  history: []
 };
 
 var saveTimer = null;
@@ -524,6 +534,7 @@ function loadData() {
         });
       }
       if (d.tips) data.tips = d.tips;
+      if (d.history) data.history = d.history;
     }
     renderAll();
     setSyncing(false);
@@ -559,6 +570,7 @@ function renderAll() {
   renderPolls();
   renderImportant();
   renderTips();
+  renderHistory();
 }
 
 // ── INFO ───────────────────────────────────────
@@ -601,7 +613,7 @@ function renderChecklist() {
       var cb = document.createElement('div');
       cb.className = 'check-box' + (item.done ? ' checked' : '');
       cb.innerHTML = item.done ? '&#10003;' : '';
-      cb.onclick = (function(c,i){ return function(){ data.checklist[c].items[i].done = !data.checklist[c].items[i].done; scheduleSave(); renderChecklist(); }; })(ci,ii);
+      cb.onclick = (function(c,i,txt){ return function(){ var done = !data.checklist[c].items[i].done; data.checklist[c].items[i].done = done; logAction((done ? '✓' : '○') + ' Checkliste: "' + txt + '"'); scheduleSave(); renderChecklist(); }; })(ci,ii,item.text);
       var lbl = document.createElement('span');
       lbl.className = 'check-label' + (item.done ? ' done' : '');
       lbl.textContent = item.text;
@@ -688,7 +700,7 @@ function renderBudget() {
       +'<span style="color:var(--muted);font-size:12px">bezahlt: <strong style="color:var(--text)">'+exp.who+'</strong></span>'
       +'<span style="color:var(--sand);font-weight:700;font-size:15px">'+parseFloat(exp.amt).toFixed(2)+'€</span>';
     var del = document.createElement('button'); del.className='expense-del'; del.innerHTML='&times;';
-    del.onclick=(function(idx){return function(){data.expenses.splice(idx,1);scheduleSave();renderBudget();};})(i);
+    del.onclick=(function(idx,desc){return function(){data.expenses.splice(idx,1);logAction('🗑 Ausgabe gelöscht: "'+desc+'"');scheduleSave();renderBudget();};})(i,exp.desc);
     top.appendChild(del); block.appendChild(top);
 
     var details = document.createElement('div');
@@ -836,12 +848,12 @@ function renderBudget() {
           +'background:var(--teal);color:#1a1a2e;cursor:pointer;font-family:inherit;font-size:13px;font-weight:700;white-space:nowrap;';
         btn.textContent = 'Als beglichen markieren';
       }
-      btn.onclick = (function(k, settled_ref){ return function(){
+      btn.onclick = (function(k, tf){ return function(){
         var idx = data.settledTransactions.indexOf(k);
-        if (idx >= 0) data.settledTransactions.splice(idx, 1);
-        else data.settledTransactions.push(k);
+        if (idx >= 0) { data.settledTransactions.splice(idx, 1); logAction('↩ Zahlung zurückgesetzt: '+tf.from+' → '+tf.to+' '+tf.amt.toFixed(2)+'€'); }
+        else { data.settledTransactions.push(k); logAction('✅ Zahlung beglichen: '+tf.from+' → '+tf.to+' '+tf.amt.toFixed(2)+'€'); }
         scheduleSave(); renderBudget();
-      }; })(key);
+      }; })(key, t);
 
       right.appendChild(amt);
       right.appendChild(btn);
@@ -894,6 +906,7 @@ window.addExpense = function() {
   if (!desc || !amt || !who) { showToast('Beschreibung, Betrag und Zahler angeben'); return; }
   if (participants.length === 0) { showToast('Mind. eine Person beteiligen'); return; }
   data.expenses.push({id:Date.now(), desc:desc, amt:parseFloat(amt), who:who, participants:participants, settled:[]});
+  logAction('💶 Ausgabe hinzugefügt: "'+desc+'" '+parseFloat(amt).toFixed(2)+'€ ('+who+')');
   document.getElementById('expDesc').value='';
   document.getElementById('expAmt').value='';
   document.getElementById('expWho').value='';
@@ -987,6 +1000,7 @@ window.addNote = function() {
   if (!text) return;
   var name = currentUser ? (currentUser.displayName || currentUser.email) : 'Unbekannt';
   data.notes.push({id:Date.now(), text:text, author:name});
+  logAction('📌 Notiz gepinnt: "' + text.slice(0,40) + (text.length > 40 ? '…' : '') + '"');
   document.getElementById('noteInput').value='';
   scheduleSave(); renderNotes();
 };
@@ -1009,12 +1023,13 @@ function renderPolls() {
       var vBtn = document.createElement('button');
       vBtn.className = 'poll-vote-btn' + (voted ? ' voted' : '');
       vBtn.textContent = voted ? 'Gewählt ✓' : 'Wählen';
-      vBtn.onclick = (function(p,o){ return function(){
+      vBtn.onclick = (function(p,o,optTxt,q){ return function(){
         if (!poll.votedBy) poll.votedBy = {};
         poll.votedBy[currentUser.uid] = o;
         poll.options[o].votes = (poll.options[o].votes||0) + 1;
+        logAction('🗳 Abgestimmt: "'+optTxt+'" bei "'+q+'"');
         scheduleSave(); renderPolls();
-      }; })(pi,oi);
+      }; })(pi,oi,opt.text,poll.question);
       row.appendChild(vBtn); div.appendChild(row);
     });
     var del = document.createElement('button');
@@ -1077,9 +1092,55 @@ window.addTip = function() {
   var val = inp.value.trim();
   if (!val) return;
   data.tips.push(val);
+  logAction('💡 Reisetipp hinzugefügt: "'+val+'"');
   inp.value = '';
   scheduleSave(); renderTips();
 };
+
+// ── VERLAUF ────────────────────────────────────
+function logAction(msg) {
+  var user = currentUser ? (currentUser.displayName || currentUser.email.split('@')[0]) : '?';
+  if (!data.history) data.history = [];
+  data.history.unshift({ts: Date.now(), user: user, msg: msg});
+  if (data.history.length > 200) data.history.length = 200;
+}
+
+function formatTime(ts) {
+  var diff = Date.now() - ts;
+  var min = Math.floor(diff / 60000);
+  if (min < 1) return 'gerade eben';
+  if (min < 60) return 'vor ' + min + ' Min.';
+  var h = Math.floor(min / 60);
+  if (h < 24) return 'vor ' + h + ' Std.';
+  var days = Math.floor(h / 24);
+  if (days === 1) return 'gestern';
+  if (days < 7) return 'vor ' + days + ' Tagen';
+  var d = new Date(ts);
+  return d.getDate() + '.' + (d.getMonth()+1) + '.' + d.getFullYear();
+}
+
+function renderHistory() {
+  var el = document.getElementById('historyList');
+  if (!el) return;
+  el.innerHTML = '';
+  if (!data.history || !data.history.length) {
+    el.innerHTML = '<div style="color:var(--muted);font-size:13px;padding:20px 0;text-align:center">Noch keine Aktivitäten aufgezeichnet</div>';
+    return;
+  }
+  data.history.forEach(function(entry) {
+    var row = document.createElement('div');
+    row.style.cssText = 'display:flex;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);align-items:flex-start;';
+    var dot = document.createElement('div');
+    dot.style.cssText = 'width:8px;height:8px;border-radius:50%;background:var(--sand);flex-shrink:0;margin-top:5px;';
+    var content = document.createElement('div');
+    content.style.flex = '1';
+    content.innerHTML = '<div style="font-size:13px">'+entry.msg+'</div>'
+      +'<div style="font-size:11px;color:var(--muted);margin-top:3px">'+entry.user+' &middot; '+formatTime(entry.ts)+'</div>';
+    row.appendChild(dot); row.appendChild(content);
+    el.appendChild(row);
+  });
+  el.lastChild.style.borderBottom = 'none';
+}
 
 // ── TOAST ──────────────────────────────────────
 function showToast(msg) {

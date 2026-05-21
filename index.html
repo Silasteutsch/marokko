@@ -278,6 +278,7 @@ body { font-family: 'Source Sans 3', sans-serif; background: var(--bg); color: v
             <button onclick="addExpense()" style="background:var(--sand);color:var(--bg);border:none;border-radius:6px;padding:9px 20px;cursor:pointer;font-weight:700;font-family:inherit;font-size:14px;">Ausgabe hinzufügen</button>
           </div>
         </div>
+        <div id="paypalSection" style="margin-top:16px"></div>
         <div class="abrechnung" id="abrechnung"></div>
       </div>
     </div>
@@ -435,6 +436,7 @@ var data = {
   notes: [],
   polls: [],
   settledTransactions: [],
+  paypalEmails: {},
   important: [
     {icon:'🚑', label:'Notruf Marokko', value:'15 / 19'},
     {icon:'🏥', label:'Nächstes Krankenhaus', value:'Clinique du Sud, Agadir'},
@@ -514,6 +516,7 @@ function loadData() {
       if (d.notes) data.notes = d.notes;
       if (d.polls) data.polls = d.polls;
       if (d.settledTransactions) data.settledTransactions = d.settledTransactions;
+      if (d.paypalEmails) data.paypalEmails = d.paypalEmails;
       // Merge important: keep default items, only overwrite values from Firestore
       if (d.important) {
         d.important.forEach(function(saved, i) {
@@ -730,6 +733,28 @@ function renderBudget() {
     });
   });
 
+  // PayPal emails section
+  var ppEl = document.getElementById('paypalSection');
+  ppEl.innerHTML = '<div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">💳 PayPal-Adressen</div>';
+  var ppGrid = document.createElement('div');
+  ppGrid.style.cssText = 'display:grid;grid-template-columns:1fr 1fr;gap:8px;';
+  members.forEach(function(m) {
+    var wrap = document.createElement('div');
+    wrap.style.cssText = 'background:var(--surface);border-radius:8px;padding:10px 12px;';
+    var label = document.createElement('div');
+    label.style.cssText = 'font-size:11px;color:var(--muted);margin-bottom:4px;';
+    label.textContent = m;
+    var inp = document.createElement('input');
+    inp.type = 'email';
+    inp.placeholder = 'PayPal-E-Mail...';
+    inp.value = data.paypalEmails[m] || '';
+    inp.style.cssText = 'background:transparent;border:none;color:var(--text);font-size:13px;font-family:inherit;width:100%;outline:none;';
+    inp.onchange = (function(name){ return function(){ data.paypalEmails[name] = this.value.trim(); scheduleSave(); }; })(m);
+    wrap.appendChild(label); wrap.appendChild(inp);
+    ppGrid.appendChild(wrap);
+  });
+  ppEl.appendChild(ppGrid);
+
   var abr = document.getElementById('abrechnung');
   abr.innerHTML = '<div class="abrechnung-title">Abrechnung – wer zahlt wem was</div>';
 
@@ -785,10 +810,13 @@ function renderBudget() {
           +'<span style="font-size:14px;color:var(--muted);text-decoration:line-through">'
           +'<strong>'+t.from+'</strong> zahlt an <strong>'+t.to+'</strong></span>';
       } else {
+        var toEmail = data.paypalEmails[t.to] || '';
         left.innerHTML = '<span style="font-size:20px">💸</span>'
-          +'<span style="font-size:14px"><strong style="color:var(--terra)">'+t.from+'</strong>'
+          +'<div><div style="font-size:14px"><strong style="color:var(--terra)">'+t.from+'</strong>'
           +' <span style="color:var(--muted)">zahlt an</span> '
-          +'<strong style="color:var(--teal)">'+t.to+'</strong></span>';
+          +'<strong style="color:var(--teal)">'+t.to+'</strong></div>'
+          +(toEmail ? '<div style="font-size:11px;color:var(--muted);margin-top:2px">PayPal: '+toEmail+'</div>' : '')
+          +'</div>';
       }
 
       var right = document.createElement('div');

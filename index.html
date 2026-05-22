@@ -220,6 +220,7 @@ body { font-family: 'Source Sans 3', sans-serif; background: var(--bg); color: v
     <button class="nav-tab" onclick="showSection('budget')">&#128176; Budget</button>
     <button class="nav-tab" onclick="showSection('plan')">&#128197; Reiseplan</button>
     <button class="nav-tab" onclick="showSection('notes')">&#128204; Pinnwand</button>
+    <button class="nav-tab" onclick="showSection('ideas')">&#128161; Ideen</button>
     <button class="nav-tab" onclick="showSection('polls')">&#128202; Abstimmung</button>
     <button class="nav-tab" onclick="showSection('important')">&#128737; Wichtiges</button>
     <button class="nav-tab" onclick="showSection('history')">&#128336; Verlauf</button>
@@ -300,6 +301,21 @@ body { font-family: 'Source Sans 3', sans-serif; background: var(--bg); color: v
         <div class="add-note" style="margin-top:16px">
           <textarea id="noteInput" placeholder="Notiz, Idee, Link..."></textarea>
           <button class="btn" onclick="addNote()">Pinnen</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- IDEEN -->
+    <div class="section" id="section-ideas">
+      <div class="card">
+        <div class="card-title"><span>&#128161;</span> Ideen & Aktivitäten</div>
+        <div id="ideasList"></div>
+        <div style="margin-top:16px;display:flex;flex-direction:column;gap:8px">
+          <input type="text" id="ideaTitle" placeholder="Idee z.B. Kamelreiten, Surfen, Soukbesuch…" style="background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:9px 12px;font-size:14px;color:var(--text);font-family:inherit;outline:none;">
+          <div style="display:flex;gap:8px">
+            <input type="text" id="ideaDesc" placeholder="Details (optional)" style="flex:1;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:9px 12px;font-size:13px;color:var(--text);font-family:inherit;outline:none;">
+            <button onclick="addIdea()" style="background:var(--sand);color:var(--bg);border:none;border-radius:6px;padding:9px 20px;cursor:pointer;font-weight:700;font-family:inherit;font-size:14px;">+</button>
+          </div>
         </div>
       </div>
     </div>
@@ -455,6 +471,7 @@ var data = {
     {icon:'🇩🇪', label:'Deutsche Botschaft Rabat', value:'+212 537 21 56 31'},
     {icon:'💱', label:'Wechselkurs', value:'1 EUR ≈ 10.8 MAD'}
   ],
+  ideas: [],
   tips: [],
   history: []
 };
@@ -533,6 +550,7 @@ function loadData() {
           if (i < data.important.length && saved.value !== undefined) data.important[i].value = saved.value;
         });
       }
+      if (d.ideas) data.ideas = d.ideas;
       if (d.tips) data.tips = d.tips;
       if (d.history) data.history = d.history;
     }
@@ -568,6 +586,7 @@ function renderAll() {
   renderPlan();
   renderNotes();
   renderPolls();
+  renderIdeas();
   renderImportant();
   renderTips();
   renderHistory();
@@ -1095,6 +1114,63 @@ window.addTip = function() {
   logAction('💡 Reisetipp hinzugefügt: "'+val+'"');
   inp.value = '';
   scheduleSave(); renderTips();
+};
+
+// ── IDEEN ──────────────────────────────────────
+function renderIdeas() {
+  var el = document.getElementById('ideasList'); el.innerHTML = '';
+  if (!data.ideas.length) {
+    el.innerHTML = '<div style="color:var(--muted);font-size:13px;padding:12px 0">Noch keine Ideen – tragt los!</div>';
+    return;
+  }
+  var uid = currentUser ? currentUser.uid : null;
+  data.ideas.forEach(function(idea, i) {
+    var liked = uid && idea.likes && idea.likes.indexOf(uid) >= 0;
+    var card = document.createElement('div');
+    card.style.cssText = 'background:var(--surface);border-radius:10px;padding:14px;margin-bottom:10px;display:flex;gap:12px;align-items:flex-start;';
+
+    var likeBtn = document.createElement('button');
+    likeBtn.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:2px;background:'+(liked?'rgba(200,169,110,0.15)':'transparent')+';border:1px solid '+(liked?'var(--sand)':'var(--border)')+';border-radius:8px;padding:8px 10px;cursor:pointer;flex-shrink:0;';
+    likeBtn.innerHTML = '<span style="font-size:18px">'+(liked?'👍':'👍🏻')+'</span>'
+      +'<span style="font-size:11px;font-weight:700;color:'+(liked?'var(--sand)':'var(--muted)')+'">'+((idea.likes||[]).length)+'</span>';
+    likeBtn.onclick = (function(idx){ return function(){
+      if (!uid) return;
+      if (!data.ideas[idx].likes) data.ideas[idx].likes = [];
+      var pos = data.ideas[idx].likes.indexOf(uid);
+      if (pos >= 0) data.ideas[idx].likes.splice(pos, 1);
+      else data.ideas[idx].likes.push(uid);
+      scheduleSave(); renderIdeas();
+    }; })(i);
+
+    var body = document.createElement('div'); body.style.flex = '1';
+    body.innerHTML = '<div style="font-size:15px;font-weight:600;margin-bottom:2px">'+idea.title+'</div>'
+      +(idea.desc ? '<div style="font-size:13px;color:var(--muted);margin-bottom:6px">'+idea.desc+'</div>' : '')
+      +'<div style="font-size:11px;color:var(--muted)">'+idea.author+'</div>';
+
+    var del = document.createElement('button');
+    del.style.cssText = 'background:none;border:none;color:var(--muted);cursor:pointer;font-size:18px;flex-shrink:0;';
+    del.innerHTML = '&times;';
+    del.onclick = (function(idx, title){ return function(){
+      data.ideas.splice(idx, 1);
+      logAction('🗑 Idee gelöscht: "'+title+'"');
+      scheduleSave(); renderIdeas();
+    }; })(i, idea.title);
+
+    card.appendChild(likeBtn); card.appendChild(body); card.appendChild(del);
+    el.appendChild(card);
+  });
+}
+
+window.addIdea = function() {
+  var title = document.getElementById('ideaTitle').value.trim();
+  var desc  = document.getElementById('ideaDesc').value.trim();
+  if (!title) { showToast('Idee eingeben'); return; }
+  var author = currentUser ? (currentUser.displayName || currentUser.email.split('@')[0]) : 'Unbekannt';
+  data.ideas.push({id: Date.now(), title: title, desc: desc, author: author, likes: []});
+  logAction('💡 Idee hinzugefügt: "'+title+'"');
+  document.getElementById('ideaTitle').value = '';
+  document.getElementById('ideaDesc').value = '';
+  scheduleSave(); renderIdeas();
 };
 
 // ── VERLAUF ────────────────────────────────────
